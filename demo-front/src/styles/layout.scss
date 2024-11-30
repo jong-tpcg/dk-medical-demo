@@ -1,0 +1,36 @@
+.content {
+  margin: 0 40px;
+}
+
+.layout-router {
+  min-height: 100vh;
+}
+.layout {
+  background-color: #f7f8fa;
+}
+.header {
+  background-color: white;
+  border-bottom: 4px solid;
+  border-image-slice: 1;
+  border-image-source: linear-gradient(
+    to right,
+    #123280 0%,
+    #123280 20%,
+    #46a836 20%,
+    #46a836 25%,
+    #e6ecf5 25%,
+    #e6ecf5 100%
+  );
+  width: 100%;
+  padding: 0px 20px;
+  position: relative;
+}
+.task-sider {
+  background-color: #f7f8fa;
+  padding: 12px;
+}
+
+.menu-wrapper {
+  background-color: transparent;
+  margin-top: 20px;
+}
