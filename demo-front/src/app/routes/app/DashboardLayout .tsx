@@ -133,10 +133,98 @@ export const DashboardLayout = () => {
           <Outlet />
         </Content>
         <Sider width={300} className="task-sider">
-          <Card title="MY TASK" bordered={false}>
-            <p>Card content</p>
-            <p>Card content</p>
-            <p>Card content</p>
+          <Card
+            style={{
+              minHeight: "100%",
+              maxHeight: "calc(100vh - 160px)",
+              overflowY: "auto",
+            }}
+            bordered={false}
+          >
+            <div
+              style={{
+                marginBottom: "20px",
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
+            >
+              사용자 관심분야
+            </div>
+            <div style={{ marginBottom: "20px" }}>
+              <select
+                style={{ width: "100%", padding: "5px", fontSize: "14px" }}
+              >
+                <option>일반</option>
+                <option>보험심사 관련규정</option>
+                <option>간호자격심사 관련 규정</option>
+                <option>표준진료 관련 규정</option>
+              </select>
+            </div>
+
+            <div
+              style={{
+                marginBottom: "10px",
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
+            >
+              보험심사관련규정
+            </div>
+
+            <ul
+              style={{
+                marginBottom: "10px",
+                paddingLeft: "20px",
+                fontSize: "14px",
+              }}
+            >
+              <li>요양급여의 적용기준 및 방법에 관한 세부사항 [링크]</li>
+              <li>요양급여의 적용기준 및 방법에 관한 세부사항 (약제) [링크]</li>
+            </ul>
+
+            <div
+              style={{
+                marginBottom: "10px",
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
+            >
+              자주하는 질문:
+            </div>
+            <ul
+              style={{
+                marginBottom: "10px",
+                paddingLeft: "20px",
+                fontSize: "14px",
+              }}
+            >
+              <li>최근 고시 목록</li>
+              <li>예정 고시 목록</li>
+              <li>응급의료수가 관련 ...</li>
+            </ul>
+
+            <div
+              style={{
+                marginBottom: "10px",
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
+            >
+              사용자정의의 자주하는 질문:
+            </div>
+            <ul
+              style={{
+                marginBottom: "10px",
+                paddingLeft: "20px",
+                fontSize: "14px",
+              }}
+            >
+              <li>최근 고시 목록</li>
+              <li>예정 고시 목록</li>
+              <li>응급의료수가 관련 ...</li>
+            </ul>
+
+            <div style={{ fontWeight: "bold", fontSize: "16px" }}>용어사전</div>
           </Card>
         </Sider>
       </Layout>

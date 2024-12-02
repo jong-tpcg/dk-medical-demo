@@ -1,33 +1,26 @@
-import { Avatar } from "antd";
-import "@/styles/chatmessage.scss";
-import { UserOutlined } from "@ant-design/icons";
-
-export interface ChatMessage {
-  message: string;
-  time: string;
-  username?: string;
-  avatarUrl?: string;
-  sender?: "user" | "ai";
-}
+import "@/styles/chats-all.scss";
+import { DefaultChatMessageType } from "@/components/ui/chat";
+import { AvatarCustom } from "../avatar";
+import { ChatHeader } from "./chat-header";
 
 export const UserMessage = ({
   message,
   time,
-  username,
+  userName,
   avatarUrl,
-}: ChatMessage) => {
+  type,
+}: DefaultChatMessageType) => {
+  const defaultUsername = "테스트 유저";
   return (
-    <div className="user-message">
-      <div className="chat-avatar">
-        {avatarUrl && <Avatar shape="square" size={45} src={avatarUrl} />}
-        <Avatar shape="square" size={45} icon={<UserOutlined />} />
-      </div>
-      <div className="chat-content">
-        <div className="chat-header">
-          <span className="time">{time}</span>
-          <span className="username">{username}</span>
-        </div>
-        <div className="message">{message}</div>
+    <div className="chat-message-container user">
+      <AvatarCustom variant="chat-user" avatar={avatarUrl} />
+      <div className="chat-content-wrapper user">
+        <ChatHeader
+          align="right"
+          time={time}
+          userName={userName ? userName : defaultUsername}
+        />
+        <div className={`message-box user ${type ? type : ""}`}>{message}</div>
       </div>
     </div>
   );

@@ -1,0 +1,70 @@
+.my-agents-wrapper {
+  width: 100%;
+  background-color: white;
+  border-top-right-radius: 10px;
+  padding: 20px 10px;
+  position: relative;
+
+  > h2 {
+    font-weight: 700;
+    margin-left: 20px;
+  }
+}
+
+.my-agents-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+
+  .agents-scroll-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 10px 0 0;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .agent-col {
+    width: 220px;
+    height: auto;
+    flex-shrink: 0;
+    margin: 0 8px;
+    text-align: center;
+    border-radius: 10px;
+    border: 3px solid transparent;
+    .agent-card {
+      width: 100%;
+    }
+    &.inactive {
+      opacity: 0.4;
+    }
+    &.dimmed {
+      border: 3px solid #1890ff;
+    }
+    .ant-card-body {
+      padding: 12px;
+    }
+    .ant-card-cover {
+      height: 80px;
+    }
+    .ant-card-cover > img {
+      width: 100%;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      height: 100%;
+      object-fit: fill;
+    }
+  }
+}

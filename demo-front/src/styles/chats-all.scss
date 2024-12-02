@@ -1,0 +1,408 @@
+//체팅 컨테이너
+.chat-wrapper {
+  background-color: white;
+  width: 100%;
+  overflow: hidden;
+  flex: 1;
+  border-top: 2px solid #f5f7fc;
+  border-bottom-right-radius: 10px;
+  padding: 20px 25px;
+  display: flex;
+  flex-direction: column;
+  min-width: 500px;
+  position: relative;
+
+  //채팅 리스트 스타일
+  .chat-list-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+  }
+}
+
+//채팅 헤더 스타일
+.chat-header {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 10px;
+  font-weight: 700;
+  position: relative;
+  &.align-right {
+    flex-direction: row-reverse;
+  }
+  &.align-left {
+    justify-content: flex-start;
+  }
+  .username {
+    text-align: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    color: #4d5e80;
+  }
+  .time {
+    height: auto;
+    text-align: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    color: #7d8fb3;
+  }
+}
+
+//채팅 메시지 스타일
+.chat-message-container {
+  display: flex;
+  width: 100%;
+  height: auto;
+  gap: 5px;
+  .model {
+    height: auto;
+    max-height: 30px;
+    flex-shrink: 0;
+    padding: 2px 12px;
+    background-color: #f5f7fc;
+    color: #3b1dff;
+    border-radius: 50px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  &.user {
+    flex-direction: row-reverse;
+  }
+  .chat-content-wrapper {
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    &.user {
+      align-items: flex-end;
+      margin-left: 5px;
+    }
+    &.ark {
+      align-items: flex-start;
+    }
+  }
+  .dual-message-wrapper {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+
+    .message-box {
+      display: flex;
+      flex-direction: column;
+      width: 50%;
+      gap: 20px;
+      .model-label {
+        text-align: center;
+        border-bottom: 3px solid #f5f7fc;
+        color: #3b1dff;
+        font-weight: bold;
+        padding: 10px 0;
+      }
+    }
+  }
+  .message-box {
+    box-shadow: 0px 2px 5px rgba(38, 51, 77, 0.3);
+    word-wrap: break-word;
+    font-size: 1.4rem;
+    border-radius: 5px;
+    color: #4d5e80;
+    padding: 10px 16px;
+    margin: 12px 0;
+
+    &.fit {
+      width: auto;
+    }
+
+    &.ark {
+      width: 90%;
+      text-align: left;
+    }
+
+    &.user {
+      max-width: 90%;
+      text-align: left;
+    }
+
+    &.medical {
+      box-shadow: none;
+      padding: 10px 0px;
+      margin: 0;
+    }
+
+    &.compact {
+      width: 75%;
+    }
+
+    &.auto {
+      width: auto;
+    }
+  }
+
+  // .source-content {
+  //   margin-bottom: 10px;
+  //   position: relative;
+  // }
+
+  // .chat-content {
+  //   display: flex;
+  //   flex-direction: column;
+  //   margin-left: 15px;
+  //   flex-wrap: wrap;
+  //   width: 100%;
+  //   .message-wrapper {
+  //     display: flex;
+  //     flex-direction: column;
+  //     margin-top: 8px;
+
+  //     .message p {
+  //       margin: 0;
+  //       padding-right: 5px;
+  //       display: inline;
+  //     }
+  //   }
+  // }
+}
+
+//채팅 액션 버튼들
+.chat-action-menus {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  right: 0;
+  top: -10px;
+
+  .action-button {
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    .ant-btn-icon svg {
+      width: 30px;
+      height: 30px;
+      color: #dadee6;
+      &:active {
+        color: #1890ff;
+      }
+    }
+    &:active {
+      background-color: #edeff2;
+    }
+  }
+}
+
+.search-input-wrapper {
+  position: sticky;
+  bottom: 0px;
+  width: 100%;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .textarea-wrapper {
+    position: relative;
+    flex: 1;
+  }
+
+  .chat-input {
+    padding: 15px 80px 15px 20px;
+    border: none;
+    border-radius: 24px;
+    background-color: #f7f8fa;
+    font-size: 1.4rem;
+    box-shadow: none;
+  }
+  .send-button {
+    position: absolute;
+    bottom: 5px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    background-color: #1890ff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .reset-button {
+    width: 40px;
+    height: 40px;
+    background-color: #7d8fb3;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.6rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+//ProductChat(이미지 같이 보여줄때)
+.lg-img-container {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+//마크다운형식
+.markdown {
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  & > * {
+    flex-grow: 1;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+  h2 {
+    margin-bottom: 10px;
+  }
+  ul {
+    list-style-position: outside;
+    margin: 10px 0;
+    padding-left: 20px;
+  }
+
+  ol {
+    margin: 8px 0;
+    padding-left: 10px;
+  }
+
+  li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+
+    > p {
+      margin: 0;
+    }
+  }
+
+  p {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.5em;
+  }
+
+  .benefit-all {
+    width: 100%;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-start;
+    padding: 15px 0;
+    flex-wrap: wrap;
+  }
+
+  .benefit-card {
+    border: 3px solid #f7f8fa;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    min-width: 150px;
+    flex: 1 1 calc(25% - 12px);
+    max-width: calc(25% - 12px);
+    height: auto;
+    max-height: 180px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .benefit-title {
+    font-weight: bold;
+    font-size: 1.6rem;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  .benefit-description {
+    white-space: pre-line;
+    overflow-y: auto;
+    flex-grow: 1;
+
+    &::-webkit-scrollbar {
+      width: 0;
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+  }
+}
+.button-wrapper {
+  margin: 10px 0;
+  width: 100%;
+  > h3 {
+    color: #4d5e80;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+
+  .button-group {
+    display: flex;
+    &.left {
+      justify-content: flex-start;
+    }
+    &.center {
+      justify-content: center;
+    }
+    &.right {
+      justify-content: flex-end;
+    }
+    width: 100%;
+    gap: 12px;
+    .button-loading {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+    }
+  }
+}
+
+.custom-button {
+  background-color: #f5f7fc;
+  color: #3b1dff;
+  border: none;
+  font-weight: bold;
+  box-shadow: none;
+  text-align: center;
+  &:hover {
+    background-color: #ebeff9;
+  }
+  &.none_active {
+    background-color: #f5f7fc;
+    color: #8c8c8c;
+    box-shadow: none;
+  }
+  &.loading {
+    color: white;
+    background-color: #637381b2;
+    cursor: not-allowed;
+  }
+}

@@ -1,32 +1,32 @@
-import { Avatar } from "antd";
-import "@/styles/chatmessage.scss";
-import ArkSvg from "@/assets/ark-base.svg";
-
-export interface ChatMessage {
-  message: string;
-  time: string;
-  username?: string;
+import "@/styles/chats-all.scss";
+import { AvatarCustom } from "@/components/ui/avatar";
+import { ChatHeader } from "./chat-header";
+import { Spinner } from "../spinner/Spinner";
+import { useEffect } from "react";
+export const ArkDefault = ({
+  children,
+  time,
+  model,
+  userName = "D-Chat",
+  avatarUrl = "ark",
+  status,
+}: {
+  children: React.ReactNode;
+  time?: string;
+  model?: string;
+  userName?: string;
   avatarUrl?: string;
-  sender?: "user" | "ai";
-}
-
-export const ArkDefault = ({ message, time, username }: ChatMessage) => {
+  status?: string;
+}) => {
+  useEffect(() => {
+    console.log(status);
+  }, [status]);
   return (
-    <div className="ai-message">
-      <div className="chat-avatar">
-        <Avatar
-          shape="square"
-          size={45}
-          src={ArkSvg}
-          style={{ backgroundColor: "#cce7ff" }}
-        />
-      </div>
-      <div className="chat-content">
-        <div className="chat-header">
-          <span className="time">{time}</span>
-          <span className="username">{username}</span>
-        </div>
-        <div className="message">{message}</div>
+    <div className="chat-message-container ark">
+      <AvatarCustom variant="chat-ark" avatar={avatarUrl} />
+      <div className="chat-content-wrapper ark">
+        <ChatHeader model={model} time={time} userName={userName} />
+        {status == "loading" ? <Spinner /> : children}
       </div>
     </div>
   );

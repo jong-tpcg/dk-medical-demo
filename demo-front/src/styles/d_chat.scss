@@ -1,0 +1,19 @@
+.chat-container {
+  display: flex;
+  height: 100%;
+
+  .chat-sider {
+    padding: 20px;
+    height: 100%;
+    border-right: 2px solid rgb(247, 248, 250);
+    background-color: white;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    position: relative;
+    .sider-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+  }
+}
