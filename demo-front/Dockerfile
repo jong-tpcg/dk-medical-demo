@@ -1,18 +1,22 @@
 # Build the frontend
 FROM node:20 as vite-build
 
+# Define application directory
+WORKDIR /app
+
+
 # pnpm 설치
 RUN npm install -g pnpm
 
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
 
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 RUN pnpm install
 
 COPY . .
 ENV ENV=dev
-
 RUN pnpm build
+
 # Step 2: Serve with Nginx
 FROM nginx:alpine
 
