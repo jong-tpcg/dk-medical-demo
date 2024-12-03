@@ -1,20 +1,21 @@
 # Use the official Python image from the Docker Hub
-FROM python:3.9-slim
+FROM python:3.11.9
+ENV PYTHONUNBUFFERED True
 
 # Set the working directory inside the container to match the root folder name
-WORKDIR /demo-app
+ENV APP_HOME /demo-app
+WORKDIR $APP_HOME
 
 # Copy the requirements file into the container
-COPY requirements.txt /demo-app/requirements.txt
-
-# Install the dependencies
-RUN pip install --no-cache-dir -r /demo-app/requirements.txt
+RUN pip install --upgrade pip
+COPY requirements.txt  $APP_HOME/requirements.txt
+RUN pip install --no-cache-dir -r  $APP_HOME/requirements.txt
 
 # Copy the rest of the application code into the working directory
-COPY . /demo-app
+COPY .  $APP_HOME
 
 # Expose the port the app runs on
 EXPOSE 8080
 
 # Command to run the application
-CMD ["python", "app.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
