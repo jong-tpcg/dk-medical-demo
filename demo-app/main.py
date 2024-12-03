@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -13,7 +15,10 @@ app.add_middleware(
 
 @app.get("/")
 def test():
-    return {"message": "Hello World"}
+    try:
+        return JSONResponse(content={"message": "Hello World"}, status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
