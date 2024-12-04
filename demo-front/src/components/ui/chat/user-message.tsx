@@ -9,7 +9,7 @@ export const UserMessage = ({
   userName,
   avatarUrl,
   type,
-}: DefaultChatMessageType) => {
+}: Partial<DefaultChatMessageType>) => {
   const defaultUsername = "테스트 유저";
   return (
     <div className="chat-message-container user">

@@ -1,0 +1,149 @@
+.modal-custom {
+  .title {
+    font-size: 2.3rem;
+    font-weight: bold;
+    color: #0b76b7;
+    margin-bottom: 15px;
+  }
+  .header-content {
+    padding: 8px 0 0;
+    .category-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .category-button {
+      background: none;
+      border: 2px solid #f0f0f0;
+      border-radius: 50px;
+      font-size: 1.3rem;
+      padding: 7px 14px;
+      cursor: pointer;
+      color: black;
+
+      &:hover {
+        color: #0b76b7;
+      }
+
+      &.active {
+        font-weight: bold;
+        color: #0b76b7;
+        border: 2px solid #0b76b7;
+      }
+    }
+  }
+
+  .ant-modal-content {
+    padding: 40px 44px;
+    height: 800px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ant-modal-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 100%;
+    text-align: left;
+    padding: 30px 20px 10px;
+
+    border: 2px solid #f0f0f0;
+    h3 {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    ul {
+      list-style-position: outside;
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+
+    ol {
+      margin: 8px 0;
+      padding-left: 10px;
+    }
+
+    li {
+      margin-bottom: 4px;
+      line-height: 1.5;
+
+      > p {
+        margin: 0;
+      }
+    }
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #d3d3d3;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: #065a8c;
+    }
+  }
+
+  .ant-modal-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+    gap: 50px;
+
+    .footer-button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      color: #ccc;
+      box-shadow: none;
+
+      &.left {
+        justify-content: flex-end;
+      }
+      &.right {
+        justify-content: flex-start;
+      }
+
+      .anticon {
+        color: #0b76b7;
+        font-size: 1.5rem;
+      }
+
+      &:disabled {
+        color: #ccc;
+        cursor: not-allowed;
+        .anticon {
+          color: #ccc;
+          font-size: 1.5rem;
+        }
+      }
+
+      .card-name {
+        margin-left: 0.5rem;
+      }
+    }
+  }
+}

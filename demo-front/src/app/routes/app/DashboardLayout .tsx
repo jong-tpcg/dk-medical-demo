@@ -132,7 +132,7 @@ export const DashboardLayout = () => {
         <Content className="content">
           <Outlet />
         </Content>
-        <Sider width={300} className="task-sider">
+        <Sider width={270} className="task-sider">
           <Card
             style={{
               minHeight: "100%",

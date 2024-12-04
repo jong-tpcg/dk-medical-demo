@@ -24,7 +24,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 5px;
+    gap: 2px;
     overflow-x: auto;
     padding: 10px 0 0;
     scroll-behavior: smooth;
@@ -37,10 +37,10 @@
   }
 
   .agent-col {
-    width: 220px;
+    width: 200px;
     height: auto;
     flex-shrink: 0;
-    margin: 0 8px;
+    margin: 0 2px;
     text-align: center;
     border-radius: 10px;
     border: 3px solid transparent;
