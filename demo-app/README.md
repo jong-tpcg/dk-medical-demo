@@ -1,5 +1,5 @@
 FastAPI 실행
-uvicorn main:app --reload uvicorn main:app --workers 2
+uvicorn main:app --reload
 
 Deploy Cloud Run
 pip freeze > requirements.txt
