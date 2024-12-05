@@ -70,7 +70,7 @@ class DiscoveryEngineClient:
         # Prepare the payload
         payload = {
             'query': query,
-            'pageSize':3,
+            'pageSize':10,
             }
 
         if filter_expression:
