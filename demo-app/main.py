@@ -11,8 +11,14 @@ import json
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import markdown
+from custom_agent.agent_builder_query_nfilter import DiscoveryEngineClient
+
 
 API_ENDPOINT = "https://discoveryengine.googleapis.com/v1alpha/projects/556320446019/locations/global/collections/default_collection/engines/dk-demo-ocr-search_1727419939769/servingConfigs/default_search:answer"
+PROJECT_NUMBER = '556320446019'
+DATA_STORE_ID = 'demo-dk-qna-csv_1733369222458'
+
+client = DiscoveryEngineClient(PROJECT_NUMBER, DATA_STORE_ID)
 
 app = FastAPI()
 app.add_middleware(
@@ -31,11 +37,12 @@ def get_access_token():
 
 AUTH_TOKEN = get_access_token()
 
-
+def get_qna_response(query):    
+    print("사용자 질문 : ",query)
+    
+    
 def generate_prompt(parsed_results,query):
-    answer_text = parsed_results.get('answer', {}).get('answerText', '')
     references = parsed_results.get('answer', {}).get('references', [])
-    citations = parsed_results.get('answer', {}).get('citations', [])
     reference_map = []
     for idx, ref in enumerate(references):
         chunk_info = ref.get('chunkInfo', {})
@@ -56,14 +63,24 @@ def generate_prompt(parsed_results,query):
     vertexai.init(project="dk-medical-solutions", location="us-central1")
 
     model = GenerativeModel("gemini-1.5-flash-002")
+    result = client.search(query)
+    qna_results = []
+    print(result)
+    with open("result.json", 'w', encoding='utf-8') as f:
+        json.dump(result, f, indent=4, ensure_ascii=False)
+    if "results" in result:
+        for item in result["results"]:
+            document = item.get("document", {})
+            struct_data = document.get("structData", None)
+            if struct_data:
+                qna_results.append(struct_data)
     
-    
+    print(qna_results)
     prompt = f"""
     <role>
     You are D-Chat, a domain-specific conversational assistant designed for delivering precise and structured responses based on healthcare insurance review regulations.
     Your role is to assist users by providing accurate, up-to-date information in a structured manner. 
     </role>
-
     <task>
     Step-by-step instructions:
 
@@ -95,7 +112,7 @@ def generate_prompt(parsed_results,query):
     참고로, 이 내용은 [문서 이름](문서 URL) 문서를 참고하여 작성되었습니다.
     {reference_map}에서 정보가 없어서 답을 못할 경우에는 <p>검색어에 대한 정보가 존재하지 않습니다.</p> 라고 응답합니다.
     
-
+    모든 텍스트는 <code></code> 태그로 감싸지 않습니다.
     </format>
     <example>
     ### Example 1: Recent Notices Query
@@ -143,25 +160,13 @@ def generate_prompt(parsed_results,query):
     
     """
     response = model.generate_content(
-    prompt,
-    # generation_config={
-    #     "temperature": 1,
-    #     "max_output_tokens": 2048,
-    #     "top_p": 1.0,
-    #     "top_k": 40,
-    # }
-    )
-    output_data = {
-    "query": query,
-    "answer_text": answer_text,
-    "references_map": reference_map,
-    "response": response.text 
-    }   
+    prompt)
+
         
     raw_markdown = response.text.replace('\n', '  \n').strip()
     html_content = markdown.markdown(
         raw_markdown,
-        extensions=['markdown.extensions.tables']  # 테이블 변환을 위한 확장
+        extensions=['markdown.extensions.tables']  
     )
     
     
@@ -169,7 +174,8 @@ def generate_prompt(parsed_results,query):
         "answer_text": response.text,
         "answer_html": html_content,
         "references": reference_map,
-        "related_questions": parsed_results.get('answer', {}).get('relatedQuestions', [])
+        "related_questions": parsed_results.get('answer', {}).get('relatedQuestions', []),
+        "qna_results": qna_results
     }
     return parsed_results
     
@@ -231,6 +237,7 @@ def index(request: QueryRequest):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
