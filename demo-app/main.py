@@ -11,7 +11,7 @@ import json
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import markdown
-from custom_agent.agent_builder_query_nfilter import DiscoveryEngineClient
+from utils.agent_builder_query_nfilter import DiscoveryEngineClient
 
 
 API_ENDPOINT = "https://discoveryengine.googleapis.com/v1alpha/projects/556320446019/locations/global/collections/default_collection/engines/dk-demo-ocr-search_1727419939769/servingConfigs/default_search:answer"
@@ -36,10 +36,6 @@ def get_access_token():
     return credentials.token
 
 AUTH_TOKEN = get_access_token()
-
-def get_qna_response(query):    
-    print("사용자 질문 : ",query)
-    
     
 def generate_prompt(parsed_results,query):
     references = parsed_results.get('answer', {}).get('references', [])
@@ -63,19 +59,7 @@ def generate_prompt(parsed_results,query):
     vertexai.init(project="dk-medical-solutions", location="us-central1")
 
     model = GenerativeModel("gemini-1.5-flash-002")
-    result = client.search(query)
-    qna_results = []
-    print(result)
-    with open("result.json", 'w', encoding='utf-8') as f:
-        json.dump(result, f, indent=4, ensure_ascii=False)
-    if "results" in result:
-        for item in result["results"]:
-            document = item.get("document", {})
-            struct_data = document.get("structData", None)
-            if struct_data:
-                qna_results.append(struct_data)
     
-    print(qna_results)
     prompt = f"""
     <role>
     You are D-Chat, a domain-specific conversational assistant designed for delivering precise and structured responses based on healthcare insurance review regulations.
@@ -168,6 +152,15 @@ def generate_prompt(parsed_results,query):
         raw_markdown,
         extensions=['markdown.extensions.tables']  
     )
+    ## qna search
+    result = client.search(query)
+    qna_results = []
+    if "results" in result:
+        for item in result["results"]:
+            document = item.get("document", {})
+            struct_data = document.get("structData", None)
+            if struct_data:
+                qna_results.append(struct_data)
     
     
     parsed_results = {
