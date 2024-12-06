@@ -137,7 +137,7 @@ export const MedicalSummary = () => {
   };
 
   return (
-    <div className="chat-container">
+    <div className="medical-container">
       {contextHolder}
       <div className="audio-input-wrapper">
         <Dragger {...props}>

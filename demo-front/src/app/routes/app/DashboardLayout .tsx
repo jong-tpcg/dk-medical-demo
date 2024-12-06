@@ -66,8 +66,14 @@ export const DashboardLayout = () => {
       const selectedItem = items.find((item) =>
         item.children?.find((child) => child.key === e.key)
       );
-      console.log("selectedItem", selectedItem);
-      navigate(`${selectedItem?.key}/${e.key}`);
+      if (e.key === "dashboard") {
+        return window.open(
+          "https://hallym-poc-demo-556320446019.us-central1.run.app/",
+          "_blank"
+        );
+      } else {
+        navigate(`${selectedItem?.key}/${e.key}`);
+      }
     } else {
       messageApi.warning("준비중인 기능입니다.");
     }
