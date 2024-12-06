@@ -12,11 +12,13 @@ import vertexai
 from vertexai.generative_models import GenerativeModel
 import markdown
 from utils.agent_builder_query_nfilter import DiscoveryEngineClient
+from utils.rerank import rank_query, fact_parser
 
 
 API_ENDPOINT = "https://discoveryengine.googleapis.com/v1alpha/projects/556320446019/locations/global/collections/default_collection/engines/dk-demo-ocr-search_1727419939769/servingConfigs/default_search:answer"
 PROJECT_NUMBER = '556320446019'
 DATA_STORE_ID = 'demo-dk-qna-csv_1733369222458'
+OCR_DATASTORE_ID = 'dk-demo-ocr-insurance_1727419968121'
 
 client = DiscoveryEngineClient(PROJECT_NUMBER, DATA_STORE_ID)
 
@@ -38,23 +40,25 @@ def get_access_token():
 AUTH_TOKEN = get_access_token()
     
 def generate_prompt(parsed_results,query):
-    references = parsed_results.get('answer', {}).get('references', [])
-    reference_map = []
-    for idx, ref in enumerate(references):
-        chunk_info = ref.get('chunkInfo', {})
-        doc_meta = chunk_info.get('documentMetadata', {})
-        uri = doc_meta.get('uri', '#')
-        # Convert gs:// links to https://
-        if uri.startswith('gs://'):
-            uri = uri.replace('gs://', 'https://storage.googleapis.com/')
-        reference_map.append({
-            'title': doc_meta.get('title', 'No Title'),
-            'uri': uri,
-            'page': doc_meta.get('pageIdentifier', 'Unknown'),
-            'relevance': chunk_info.get('relevanceScore', 'N/A'),
-            'content': chunk_info.get('content', '')
-        })
-        
+    # references = parsed_results.get('answer', {}).get('references', [])
+    # reference_map = []
+    # for idx, ref in enumerate(references):
+    #     chunk_info = ref.get('chunkInfo', {})
+    #     doc_meta = chunk_info.get('documentMetadata', {})
+    #     uri = doc_meta.get('uri', '#')
+    #     # Convert gs:// links to https://
+    #     if uri.startswith('gs://'):
+    #         uri = uri.replace('gs://', 'https://storage.googleapis.com/')
+    #     reference_map.append({
+    #         'title': doc_meta.get('title', 'No Title'),
+    #         'uri': uri,
+    #         'page': doc_meta.get('pageIdentifier', 'Unknown'),
+    #         'relevance': chunk_info.get('relevanceScore', 'N/A'),
+    #         'content': chunk_info.get('content', '')
+    #     })
+    
+    reference_map = parsed_results.get('records', [])
+
     ## model prompt
     vertexai.init(project="dk-medical-solutions", location="us-central1")
 
@@ -163,14 +167,25 @@ def generate_prompt(parsed_results,query):
                 qna_results.append(struct_data)
     
     
-    parsed_results = {
+    final = {
         "answer_text": response.text,
         "answer_html": html_content,
         "references": reference_map,
         "related_questions": parsed_results.get('answer', {}).get('relatedQuestions', []),
         "qna_results": qna_results
     }
-    return parsed_results
+    fact_parsing = fact_parser(parsed_results)
+    result_parse = client.check_grounding(
+        project_id=PROJECT_NUMBER,
+        answer_candidate=response.text,
+        facts=fact_parsing,
+        citation_threshold=0.8,
+        )
+    final["filter_answer"] = result_parse
+    # print(final)
+    # print("====================================")
+    # print(result_parse)
+    return final
     
 class QueryRequest(BaseModel):
     query: str
@@ -206,10 +221,26 @@ def index(request: QueryRequest):
                 },
             }
             response = requests.post(API_ENDPOINT, headers=headers, data=json.dumps(payload))
+            print(response.text)
+
+            
             if response.status_code == 200:
                 response.encoding = 'utf-8'
                 data = response.json()
-                prompt_data = generate_prompt(data,query)
+            
+            # client = DiscoveryEngineClient(PROJECT_NUMBER, OCR_DATASTORE_ID)
+            # response = client.search(query)
+            if response:
+                ##### Rerank #####
+                ocr_data = rank_query(
+                    query=query,
+                    project_id=PROJECT_NUMBER,
+                    rows=data,
+                    datastore_id=OCR_DATASTORE_ID
+                    )
+                print("====================================")
+                print(ocr_data)
+                prompt_data = generate_prompt(ocr_data,query)
                 with open("result.json", 'w', encoding='utf-8') as f:
                     json.dump(prompt_data, f, indent=4, ensure_ascii=False)
                 if(prompt_data["references"] != []):
@@ -230,10 +261,6 @@ def index(request: QueryRequest):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
