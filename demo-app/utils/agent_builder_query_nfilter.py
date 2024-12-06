@@ -91,6 +91,52 @@ class DiscoveryEngineClient:
         response.encoding = 'utf-8'
         # Return the JSON response
         return response.json()
+    
+    def check_grounding(self, project_id, answer_candidate, facts, citation_threshold="0.6", enable_claim_level_score=True):
+        """
+        Calls the grounding check API.
+
+        Parameters:
+        - project_id (str): Your Google Cloud project ID.
+        - answer_candidate (str): The answer candidate to check.
+        - facts (list): A list of facts to check against.
+        - citation_threshold (str, optional): The citation threshold.
+        - enable_claim_level_score (bool, optional): Whether to enable claim level score.
+
+        Returns:
+        - dict: The JSON response from the API.
+        """
+        # Prepare the authorization header
+        headers = {
+            'Authorization': f'Bearer {self.access_token}',
+            'Content-Type': 'application/json'
+        }
+
+        # Construct the API endpoint URL
+        url = (
+            f'https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}'
+            '/locations/global/groundingConfigs/default_grounding_config:check'
+        )
+
+        # Prepare the payload
+        payload = {
+            'answerCandidate': answer_candidate,
+            'facts': facts,
+            'groundingSpec': {
+                'citationThreshold': citation_threshold,
+                'enableClaimLevelScore': enable_claim_level_score,
+            }
+        }
+        # Make the POST request
+        response = requests.post(url, headers=headers, json=payload)
+
+        # Check for errors
+        if response.status_code != 200:
+            raise Exception(f'API request failed with status code {response.status_code}: {response.text}')
+
+        response.encoding = 'utf-8'
+        # Return the JSON response
+        return response.json()
 
     def save_response_to_file(self, response_data, filename='result.json'):
         """
