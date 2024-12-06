@@ -21,12 +21,12 @@ const items = [
     status: "active",
     children: [
       {
-        key: "medical/dashboard",
+        key: "dashboard",
         label: <p>경과기록지 작성</p>,
         icon: <AiOutlineDashboard size={20} />,
       },
       {
-        key: "medical/assistant",
+        key: "summary",
         label: <p>진료상담 요약</p>,
         icon: <MdOutlineMedicalServices size={20} />,
       },
@@ -59,8 +59,15 @@ export const DashboardLayout = () => {
   const [title, setTitle] = useState("DK AI Platform");
   const onMenuClick = (e: { key: string }) => {
     const selectedItem = items.find((item) => item.key === e.key);
+
     if (selectedItem?.status === "active") {
       navigate(e.key);
+    } else if (selectedItem == undefined) {
+      const selectedItem = items.find((item) =>
+        item.children?.find((child) => child.key === e.key)
+      );
+      console.log("selectedItem", selectedItem);
+      navigate(`${selectedItem?.key}/${e.key}`);
     } else {
       messageApi.warning("준비중인 기능입니다.");
     }
@@ -153,6 +160,7 @@ export const DashboardLayout = () => {
           padding: "10px 0",
           borderTop: "2px solid #f7f8fa",
           textAlign: "center",
+          height: "40px",
         }}
       >
         <Col>

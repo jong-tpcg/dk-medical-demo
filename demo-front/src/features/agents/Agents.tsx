@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Card, Button, message } from "antd";
+import { Card, Button, message, Select } from "antd";
 import {
   LeftOutlined,
   MenuFoldOutlined,
@@ -10,10 +10,11 @@ import {
 import "@/styles/agents.scss";
 import "@/styles/d_chat.scss";
 import Sider from "antd/es/layout/Sider";
-import IImg from "@/assets/agents/2.jpg";
+import IImg from "@/assets/agents/1.jpg";
+import NImg from "@/assets/agents/2.jpg";
+import DImg from "@/assets/agents/3.jpg";
 
 const agents = [
-  { title: "일반", img: "", route: "normal", status: "active" },
   {
     title: "보험심사 관련 규정",
     img: IImg,
@@ -22,19 +23,20 @@ const agents = [
   },
   {
     title: "간호자격심사 관련 규정",
-    img: "",
+    img: NImg,
     route: "nursing",
-    status: "active",
+    status: "inactive",
   },
   {
     title: "표준진료 관련 규정",
-    img: "",
+    img: DImg,
     route: "treatment",
-    status: "active",
+    status: "inactive",
   },
 ];
 export const Agents = () => {
   const navigate = useNavigate();
+  const { Option } = Select;
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
@@ -146,6 +148,7 @@ export const Agents = () => {
                 fontWeight: "bold",
                 fontSize: "20px",
                 marginBottom: "20px",
+                color: "#1b1f26b8",
               }}
             >
               D-Chat
@@ -157,48 +160,26 @@ export const Agents = () => {
                 marginBottom: "20px",
                 fontSize: "14px",
                 fontWeight: "bold",
-                color: "#007bff",
+                color: "#1890ff",
                 cursor: "pointer",
               }}
             >
               [+ 새채팅]
             </div>
 
-            {/* 즐겨찾기 섹션 */}
-            <div
-              style={{
-                marginBottom: "20px",
-                fontSize: "14px",
-              }}
-            >
-              <strong>즐겨찾기:</strong>
-              <ul
-                style={{
-                  paddingLeft: "20px",
-                  marginTop: "10px",
-                }}
-              >
+            <div className="task-block">
+              <h5>즐겨찾기:</h5>
+              <ul>
                 <li>최근 고시</li>
                 <li>요양급여 행위별</li>
                 <li>요양급여 (약제)</li>
               </ul>
             </div>
 
-            {/* 최근 채팅 섹션 */}
-            <div
-              style={{
-                marginBottom: "20px",
-                fontSize: "14px",
-              }}
-            >
-              <strong>최근채팅:</strong>
-              <ul
-                style={{
-                  paddingLeft: "20px",
-                  marginTop: "10px",
-                }}
-              >
-                <li>최근 고시는 ...</li>
+            <div className="task-block">
+              <h5>최근채팅:</h5>
+              <ul>
+                <li>최근 고시는 ... </li>
                 <li>응급진료수가 는 ...</li>
                 <li>제2024-181호의 ...</li>
               </ul>
@@ -209,6 +190,7 @@ export const Agents = () => {
               style={{
                 marginTop: "auto",
                 fontSize: "14px",
+                color: "#1b1f26b8",
               }}
             >
               <strong>보험심사팀</strong> 한DK 님
@@ -279,6 +261,59 @@ export const Agents = () => {
           </div>
         </div>
         {selectedAgent && <Outlet context={{ selectedAgent }} />}
+      </div>
+      <div className="task-sider-wrapper">
+        <Card
+          className="task-card"
+          title={
+            <h1
+              style={{
+                color: "#7d8fb3",
+                textAlign: "center",
+                fontSize: "1.6rem",
+              }}
+            >
+              My Task
+            </h1>
+          }
+          bordered={false}
+        >
+          <div className="task-block">
+            <h5>사용자 관심분야</h5>
+            <Select
+              placeholder="관심 분야를 선택해주세요"
+              style={{ width: "100%", color: "#7d8fb3" }}
+            >
+              <Option value="insurance">보험심사 관련규정</Option>
+              <Option value="nursing">간호자격심사 관련 규정</Option>
+              <Option value="standardCare">표준진료 관련 규정</Option>
+            </Select>
+          </div>
+
+          <div className="task-block">
+            <h5>보험 심사 관련 규정</h5>
+            <ul>
+              <li>요양급여의 적용기준 및 방법에 관한 세부사항 </li>
+              <li>요양급여의 적용기준 및 방법에 관한 세부사항 (약제)</li>
+            </ul>
+          </div>
+          <div className="task-block">
+            <h5>자주 하는 질문</h5>
+            <ul>
+              <li>최근 고시 목록 </li>
+              <li>예정 고시 목록</li>
+              <li>응급의료수가 관련</li>
+            </ul>
+          </div>
+          <div className="task-block">
+            <h5>사용자 정의 자주 하는 질문</h5>
+            <ul>
+              <li>최근 고시 목록</li>
+              <li>예정 고시 목록</li>
+              <li>응급의료수가 관련</li>
+            </ul>
+          </div>
+        </Card>
       </div>
     </div>
   );
