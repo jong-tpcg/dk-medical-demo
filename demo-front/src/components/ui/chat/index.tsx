@@ -12,9 +12,11 @@ export interface DefaultChatMessageType {
 }
 
 export interface RefereceType {
+  id: string;
   title: string;
   content: string;
-  page: string;
-  relevance: number;
+  score: string;
   uri: string;
+  pageIdentifier: string;
+  relevanceScore: number;
 }

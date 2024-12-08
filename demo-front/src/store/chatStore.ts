@@ -14,6 +14,8 @@ type AgentChatDataType = {
 type QnaStore = {
   answer: string;
   question: string;
+  documnt_title: string;
+  documnt_content: string;
 };
 type ChatStore = {
   agentChatList: AgentChatDataType;
