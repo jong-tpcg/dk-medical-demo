@@ -17,6 +17,7 @@ export interface RefereceType {
   content: string;
   score: string;
   uri: string;
+  url_page: string;
   pageIdentifier: string;
   relevanceScore: number;
 }
