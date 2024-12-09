@@ -11,9 +11,16 @@ type AgentChatDataType = {
     | ChatTypeMap[(typeof agentConfig)[key]["type"]]
     | [];
 };
-
+type QnaStore = {
+  answer: string;
+  question: string;
+  documnt_title: string;
+  documnt_content: string;
+};
 type ChatStore = {
   agentChatList: AgentChatDataType;
+  qnalist: QnaStore[] | null;
+  setQnaList: (qnaList: QnaStore[]) => void;
   addChatMessage: <T extends keyof AgentChatDataType>(
     agent: T,
     message: ChatTypeMap[(typeof agentConfig)[T]["type"]][number]
@@ -22,6 +29,10 @@ type ChatStore = {
 };
 
 export const useChatStore = create<ChatStore>((set) => ({
+  qnalist: null,
+  setQnaList: (qnaList) => {
+    set({ qnalist: qnaList });
+  },
   agentChatList: Object.keys(agentConfig).reduce((acc, key) => {
     acc[key as keyof typeof agentConfig] = []; // 초기값은 빈 배열
     return acc;

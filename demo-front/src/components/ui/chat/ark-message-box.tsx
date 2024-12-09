@@ -30,15 +30,8 @@ export const ArkMessageBox = ({
       const text = markdownMessage
         // 굵은 텍스트(**bold**) 처리
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        // [링크](<https://...>)를 [링크](https://...)로 변환하고 URL 인코딩
-        .replace(/\[([^\]]+)\]\((https:\/\/.*?)\)/g, (_, text, url) => {
-          const encodedUrl = encodeURI(url);
-          return `[${text}](${encodedUrl})`;
-        })
-        // 닫히지 않은 [링크](https://...)를 자동으로 닫음
-        .replace(/\[([^\]]+)\((https:\/\/.*?)\)/g, (_, text, url) => {
-          return `[${text}](${url})`;
-        });
+        // 코드 블록 제거
+        .replace(/```[\s\S]*?```/g, "");
 
       console.log(text);
       setCombinedMessage(text);

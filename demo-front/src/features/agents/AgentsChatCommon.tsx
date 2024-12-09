@@ -158,7 +158,7 @@ export const AgentsChatCommon = () => {
                     {chat.tools.map((tool, index) => (
                       <div key={index}>
                         <Link
-                          href={tool.uri}
+                          href={tool.url_page}
                           style={{
                             fontSize: "20px",
                             fontWeight: "bold",
@@ -176,12 +176,14 @@ export const AgentsChatCommon = () => {
                           }}
                         >
                           <Tag>
-                            <strong>Page:</strong> {tool.page}
+                            <strong>Page:</strong> {tool.pageIdentifier}
                           </Tag>
                           <Tag
-                            color={tool.relevance > 0.5 ? "green" : "orange"}
+                            color={
+                              tool.relevanceScore > 0.5 ? "green" : "orange"
+                            }
                           >
-                            Relevance: {tool.relevance.toFixed(2)}
+                            Relevance: {tool.relevanceScore.toFixed(2)}
                           </Tag>
                         </div>
 

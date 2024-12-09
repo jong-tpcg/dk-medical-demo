@@ -1,0 +1,45 @@
+.spinner {
+  display: flex;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.dynamic-loading {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: pre;
+  flex-wrap: wrap;
+}
+
+.animated-char {
+  opacity: 0;
+  animation: fadeInSequence 3s ease-in-out infinite;
+  animation-delay: calc(0.1s * var(--i));
+  font-size: 1.6rem;
+  font-weight: bold;
+  display: inline-block;
+  color: #808080;
+
+  &.space {
+    width: 0.3rem;
+  }
+}
+
+.loading-gif {
+  width: 2rem;
+  height: 2rem;
+}
+
+@keyframes fadeInSequence {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
