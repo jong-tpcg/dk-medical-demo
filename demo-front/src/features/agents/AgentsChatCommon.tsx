@@ -68,7 +68,7 @@ export const AgentsChatCommon = () => {
     // https://demo-app-test-556320446019.us-central1.run.app
     // http://127.0.0.1:8000
     axios
-      .post("http://127.0.0.1:8020", {
+      .post("https://demo-app-test-556320446019.us-central1.run.app", {
         query: query,
       })
       .then((res) => {
