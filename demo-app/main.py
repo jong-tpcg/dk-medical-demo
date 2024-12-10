@@ -5,15 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from google.auth.transport.requests import Request
 import uvicorn
 from pydantic import BaseModel
-import google.auth
 import requests
 import json
 import vertexai
 from vertexai.generative_models import (GenerativeModel, ToolConfig)
 from utils.agent_builder_query_nfilter import DiscoveryEngineClient
 from utils.rerank import rank_query, fact_parser
-# from utils.notification_tool import noti_tool
+from utils.noti_tool import call_vertex_ai_gemini_model
 import logging
+import os
+from google.auth.transport.requests import Request
+from google.oauth2.service_account import Credentials
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +26,12 @@ DATA_STORE_ID = 'demo-dk-qna-csv_1733369222458'
 OCR_DATASTORE_ID = 'dk-demo-ocr-insurance_1727419968121'
 
 client = DiscoveryEngineClient(PROJECT_NUMBER, DATA_STORE_ID)
+from config import Settings
+import os
+
+settings = Settings()
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = settings.CREDENTIALS
+
 
 app = FastAPI()
 app.add_middleware(
@@ -36,30 +44,22 @@ app.add_middleware(
 
 
 def get_access_token():
-    credentials, project = google.auth.default()
-    credentials.refresh(Request())
+    # credentials, project = google.auth.default()
+    # credentials.refresh(Request())
+    
+    credentials = Credentials.from_service_account_file(
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'],
+    scopes=["https://www.googleapis.com/auth/cloud-platform"] 
+    )
+    credentials.refresh(Request()) 
     return credentials.token
+
 
 AUTH_TOKEN = get_access_token()
     
 def generate_prompt(parsed_results,query):
-    # references = parsed_results.get('answer', {}).get('references', [])
-    # reference_map = []
-    # for idx, ref in enumerate(references):
-    #     chunk_info = ref.get('chunkInfo', {})
-    #     doc_meta = chunk_info.get('documentMetadata', {})
-    #     uri = doc_meta.get('uri', '#')
-    #     # Convert gs:// links to https://
-    #     if uri.startswith('gs://'):
-    #         uri = uri.replace('gs://', 'https://storage.googleapis.com/')
-    #     reference_map.append({
-    #         'title': doc_meta.get('title', 'No Title'),
-    #         'uri': uri,
-    #         'page': doc_meta.get('pageIdentifier', 'Unknown'),
-    #         'relevance': chunk_info.get('relevanceScore', 'N/A'),
-    #         'content': chunk_info.get('content', '')
-    #     })
-
+    tool_results = call_vertex_ai_gemini_model(query)
+    noti_list = tool_results
     reference_map = parsed_results.get('records', [])
     for idx, ref in enumerate(reference_map):
         uri = ref.get('uri', '#')
@@ -72,8 +72,8 @@ def generate_prompt(parsed_results,query):
         
     ## model prompt
     vertexai.init(project="dk-medical-solutions", location="us-central1")
-
     model = GenerativeModel("gemini-1.5-flash-002")
+    
     prompt = f"""
     <role>
     당신은 D-Chat이라는 도메인 특화 대화형 어시스턴트입니다. 당신의 역할은 의료보험 심사 규정에 기반하여 정확하고 구조화된 응답을 제공하는 것입니다. 사용자가 질문하는 내용에 따라 명확하고 최신 정보를 제공하세요.
@@ -81,18 +81,33 @@ def generate_prompt(parsed_results,query):
     <task>
     Step-by-step instructions:
 
-    1. 사용자가 입력한 질문 {query}의 내용을 분석하여 질문의 의도를 명확히 파악합니다. 이후, 질문에 관련된 정보가 담긴 {reference_map}에서 검색하여 답변합니다.
+    1. 사용자가 입력한 질문 {query}의 내용을 분석하여 질문의 의도를 명확히 파악합니다. 이후, 질문에 유형에 따라 정보를 선택하여 정보내에서 답변합니다.
     3.  답변은 질문의 유형에 따라 달라지며, 아래와 같이 제공됩니다:
-    [공통]: 답변은 요약된 형태로 제공되어야 하며, 주요 내용은 명확하게 설명되어야 합니다. 어떤 자료를 어떻게 참고해서 답변했는지에 대한 정보를 제공해야 합니다.
-    - **기간을 포함한 질문 (예: 최근 한 달 내 고시된 내용 등)**:  
-        사용자가 명시한 기간 내 시행일 또는 고시일이 들어 있는 고시 정보를 정리하여 표를 생성합니다.  
-        - 표의 열은 "고시일", "고시번호", "시행일", "고시 내용 요약"을 포함합니다.  
-        - 고시 내용 요약은 100자 이내로 제한되어야 하며, 긴 내용은 생략하여 요약해야 합니다.
-        - 고시에 대한 정보는 반드시 {reference_map}에서 참조한 내용이어야 합니다.  
-        - 만약 해당 기간 내 고시된 내용이 없다면, "지정된 기간 내 고시된 내용이 없습니다."라는 메시지를 출력합니다.  
-        - 표를 생성할때에는 참고자료를 제공하지 않습니다.
-    - **특정 내용에 대한 질문 (예: 특정 고시 내용, 기준, 응급실 재방문시 수가 산정기준 등)**:  
+    [공통]: 답변은 요약된 형태로 제공되어야 하며, 주요 내용은 명확하게 설명되어야 합니다.  질문의 유형에 따라 {noti_list} 또는 {reference_map} 중 하나의 정보만을 참고하여 답변을 생성합니다.
+    - 사용자의 질문이 고시된 내용에 대해 알고 싶어하는 질문이면서 기간을 포함한 질문일 경우 {noti_list}만을 사용해서 답변합니다. 
+        검색 결과를 확인하여 다음 두 가지 경우에 따라 처리합니다:
+        - {noti_list}이  빈배열이 아닐경우:
+      4
+            {noti_list}에 results 리스트 안에  모든 객체 정보를 표로 출력합니다. 각 객체는 다음과 같은 속성을 가집니다:
+            revision_date: 고시일 or ""
+            notification_number: 고시번호
+            effective_date: 시행일 or ""
+            summary: 고시 내용 요약 (최대 100자)
+            없는 속성이 있을경우 그 객체의 속성은 ""으로 표시합니다.
+            - 결과를 Markdown 표 형식으로 정리합니다. 표의 열은 다음과 같습니다:
+            - "고시일"
+            - "고시번호"
+            - "시행일"
+            - "고시 내용 요약" (최대 100자)
+                | 고시일         | 고시번호      | 시행일         | 고시 내용 요약          |
+                |---------------|---------------|---------------|-------------------------|
+                | 2024-11-01    | 2024-101      | 2024-11-10    | 요양급여 기준 변경     |
+            -  markdown형태로 만들어진 표와 함께 모두 텍스트로 반환됩니다.
+        -  {noti_list}가 빈배열일경우:
+            다른 텍스트 없이 "기간내에 고시된 데이터가 없습니다."라는 메시지만 반환합니다.
+    -**특정 내용에 대한 질문 (예: 기간없이 특정 고시 내용질문, 기준, 응급실 재방문시 수가 산정기준 등) 유형일 경우:  
         질문에 관련된 정보를 {reference_map}에서 검색하여 응답합니다.  
+        어떤 자료를 어떻게 참고해서 답변했는지에 대한 정보를 제공해야 합니다.
         - {reference_map}은 정보 객체의 리스트로 구성되며, 각 객체는 다음과 같은 속성을 포함합니다:
             - id: 사용하지 않습니다.
             - title :  content를 뽑아낸 문서의 제목
@@ -100,23 +115,25 @@ def generate_prompt(parsed_results,query):
         - 각 객체의 content 필드의 모든 내용을 분석하여 질문의 주요 내용을 요약합니다.
         - 모든 객체의 content를 요약하여 헤더와 함께 정리된 리스트 형태로 제공하며, 하위 목록은 1., 2., 3. 형식으로 나열합니다.  
         - 표는 생성하지 않습니다.
+        - 주요 변경 항목과 같이 리스트 형식은 1. 2. 3.과 같은 순서로 나열합니다.
+        - 리스트의 헤더는 항상 굵은 글씨로 표시합니다. 
         - 요약 내용은 간결하고 명확하게 작성하며, 불필요한 반복이나 문구는 생략합니다.
         - title은 답변에는 사용하지 않습니다. 어떤 문서를 참고했는지는 제공하지 않습니다.
-        - 데이터가 존재하지 않거나 `reference_map`이 비어 있는 경우:
+        - {reference_map}이 비어 있는 경우:
             - "검색어에 대한 정보가 존재하지 않습니다."라는 메시지를 반환합니다.
     4. 각 문단이 끝난 후 한 개의 개행(빈 줄)을 추가하여 새로운 문단을 시작합니다. 
-    5. 표 안의 내용과 리스트 정보는 {reference_map}에서만 참조할 수 있으며, {reference_map}이 빈 배열일 경우 "검색어에 대한 요약을 생성할 수 없습니다."라는 메시지를 출력합니다.
-    6.  질문의 유형(기간 포함 여부, 특정 내용 요구 등)에 따라 답변 형식을 명확히 구분하고, 불필요한 표가 생성되지 않도록 확인합니다. 
+    6. 질문의 유형(기간 포함 여부, 특정 내용 요구 등)에 따라 답변 형식을 명확히 구분하고, 불필요한 표 또는 요약이 생성되지 않게 합니다. 모든 질문에 대한 답변은 {reference_map} 또는 {noti_list} 둘 중 하나의 정보만 참고하여 생성되어야 합니다.
+    7. {noti_list}를 사용했는데 {reference_map}도 사용했을 경우 처음 사용했던 {noti_list}만을 사용하여 답변을 생성합니다.
+    8. 표에 사용된 데이터가 {noti_list}가 아닌 경우, 표를 삭제하고 해당 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
     </task>
 
     <format>
     응답의 맨 위에 헤더나 머리글을 넣지 않습니다.
-    주요 변경 항목과 같이 리스트 형식은 1. 2. 3.과 같은 순서로 나열합니다.
-    리스트의 헤더는 항상 굵은 글씨로 표시합니다. 
-    질문:은 포함하지 않습니다.
-    질문의 유형에 따라 적절한 형식으로 구분하여 응답합니다.
+    응답에 사용자의 질문은 포함하지 않습니다.
+    질문의 유형에 따라 적절한 형식으로 구분하여 형식에 맞는 데이터를 사용하여 응답합니다.
     모든 텍스트는 <code></code> 태그로 감싸지 않습니다.
-    최종답변은 항상 텍스트로 반환됩니다.
+    최종응답에 json형식이 들어가지 않습니다.
+    표에 사용된 데이터가 {noti_list}가 아닌 경우, 표를 삭제하고 해당 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
     </format>
     <example>
     ### Example 1: Recent Notices Query
@@ -127,8 +144,10 @@ def generate_prompt(parsed_results,query):
 
     | 고시일         | 고시번호                        | 시행일       | 고시내용요약                |
     |---------------|--------------------------------|------------|---------------------------|
-    | 2024-09-12    | 보건복지부 고시 제2024-181호   | 2024-09-13 | 응급의료                   |
-    | 2024-08-29    | 보건복지부 고시 제2024-176호   | 2024-09-01 | 검사료 및 영상진단 및 방사선치료 |
+
+    or
+    
+    "기간내에 고시된 데이터가 없습니다."
 
     ---
 
@@ -168,12 +187,8 @@ def generate_prompt(parsed_results,query):
     ## Tool 사용
     # response = model.generate_content(
     #     prompt,
+    #     generation_config={"temperature": 0},
     #     tools=[noti_tool],
-    #     tool_config=ToolConfig(
-    #         function_calling_config=ToolConfig.FunctionCallingConfig(
-    #             mode=ToolConfig.FunctionCallingConfig.Mode.AUTO,
-    #         )
-    #     )
     # )
     print("=================MODEL RESPONSE===================")
     print(response)  
@@ -181,7 +196,7 @@ def generate_prompt(parsed_results,query):
     result = client.search(query)
     qna_results = []
     if "results" in result:
-        for item in result["results"]:
+        for item in result["results"][0:3]:
             document = item.get("document", {})
             struct_data = document.get("structData", None)
             if struct_data:
@@ -194,13 +209,15 @@ def generate_prompt(parsed_results,query):
         "qna_results": qna_results
     }
     fact_parsing = fact_parser(parsed_results)
-    result_parse = client.check_grounding(
-        project_id=PROJECT_NUMBER,
-        answer_candidate=response.text,
-        facts=fact_parsing,
-        citation_threshold=0.8,
-        )
-    final["filter_answer"] = result_parse
+    print(fact_parsing)
+    if(len(fact_parsing) != 0):
+        result_parse = client.check_grounding(
+            project_id=PROJECT_NUMBER,
+            answer_candidate=response.text,
+            facts=fact_parsing,
+            citation_threshold=0.8,
+            )
+        final["filter_answer"] = result_parse
     # combined_text = "\n".join(chunk["chunkText"] for chunk in result_parse["citedChunks"])
     # final["combined_text"] = combined_text
 
@@ -210,6 +227,7 @@ def generate_prompt(parsed_results,query):
     return final
     
 class QueryRequest(BaseModel):
+    
     query: str
     
 @app.post("/")
