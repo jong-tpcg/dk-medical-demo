@@ -33,7 +33,6 @@ export const ArkMessageBox = ({
         // 코드 블록 제거
         .replace(/```[\s\S]*?```/g, "");
 
-      console.log(text);
       setCombinedMessage(text);
     }
   }, [markdownMessage]);

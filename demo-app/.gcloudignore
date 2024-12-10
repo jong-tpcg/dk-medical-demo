@@ -1,0 +1,6 @@
+#!include:.gitignore
+
+!.env
+!dk_credentials.json
+
+.gitignore
