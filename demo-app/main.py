@@ -6,6 +6,7 @@ from google.auth.transport.requests import Request
 import uvicorn
 from pydantic import BaseModel
 import requests
+import urllib.parse
 import json
 import vertexai
 from vertexai.generative_models import (GenerativeModel, ToolConfig)
@@ -207,7 +208,6 @@ def generate_prompt(parsed_results,query):
         "qna_results": qna_results
     }
     fact_parsing = fact_parser(parsed_results)
-    print(fact_parsing)
     if(len(fact_parsing) != 0):
         result_parse = client.check_grounding(
             project_id=PROJECT_NUMBER,
@@ -215,10 +215,60 @@ def generate_prompt(parsed_results,query):
             facts=fact_parsing,
             citation_threshold=0.8,
             )
-        final["filter_answer"] = result_parse
-    # combined_text = "\n".join(chunk["chunkText"] for chunk in result_parse["citedChunks"])
-    # final["combined_text"] = combined_text
+        print(result_parse)
+        if "citedChunks" in result_parse:
+            print("=================FILTER RESPONSE===================")
+            answer_text = response.text
+            for chunk in result_parse["citedChunks"]:
+                source_index = int(chunk['source'])
+                chunk["url_page"] = reference_map[source_index].get('url_page', '#')
+                chunk["title"] = f"{reference_map[source_index].get("title", "Unknown")}_page_{reference_map[source_index].get("pageIdentifier", "Unknown")}" 
+        
+            for claim in result_parse["claims"]:
+                if claim.get("citationIndices"):
+                    print("================claim")
+                    source_text = ""
+                    for index in claim["citationIndices"]:
+                        source_url = result_parse["citedChunks"][int(index)].get('url_page', '#')
+                        source_title = result_parse["citedChunks"][int(index)].get("title", "Unknown")
+                        # URL 전체를 파싱
+                        parsed_url = urllib.parse.urlparse(source_url)
 
+                        # path와 query만 인코딩
+                        encoded_path = urllib.parse.quote(parsed_url.path)  # 경로 인코딩
+                        fragment = parsed_url.fragment
+
+                        # 인코딩된 URL 재구성
+                        encoded_url = urllib.parse.urlunparse((
+                            parsed_url.scheme,    # http or https
+                            parsed_url.netloc,    # example.com
+                            encoded_path,         # /path/to/resource
+                            parsed_url.params,    # URL params (if any)
+                            parsed_url.query,     # 쿼리는 없으므로 그대로
+                            fragment              # #page=3 그대로 유지
+                        ))
+                        url = f"[{source_title}]({encoded_url})"
+                        if url not in source_text:
+                            source_text += f" [{source_title}]({encoded_url})"
+                    
+                    print("삽입 텍스트", source_text)
+                    print("텍스트위치", claim["claimText"])    
+                    claim_text = claim["claimText"]
+    
+                    # 텍스트 위치 찾기
+                    start_pos = answer_text.find(claim_text)
+                    if start_pos == -1:
+                        print(f"Claim text not found in answer_text: {claim_text}")
+                        continue
+                    end_pos = start_pos + len(claim_text)
+
+                    answer_text = answer_text[:end_pos] + source_text + answer_text[end_pos:]
+                    print("텍스트",  answer_text)
+                    
+            final["filter_text"] = answer_text
+                    
+        final["filter_answer"] = result_parse
+        
     # print(final)
     # print("====================================")
     # print(result_parse)

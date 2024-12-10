@@ -68,7 +68,7 @@ export const AgentsChatCommon = () => {
     // https://demo-app-test-556320446019.us-central1.run.app
     // http://127.0.0.1:8000
     axios
-      .post("https://demo-app-test-556320446019.us-central1.run.app", {
+      .post("http://127.0.0.1:8020", {
         query: query,
       })
       .then((res) => {
@@ -76,7 +76,7 @@ export const AgentsChatCommon = () => {
           console.log(res.data);
           const data = res.data;
           updateLastAiMessage({
-            message: data.answer_text,
+            message: data.filter_text ? data.filter_text : data.answer_text,
             tools: data.references,
             type: "success",
           });
