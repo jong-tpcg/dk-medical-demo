@@ -55,8 +55,6 @@ def get_access_token():
     return credentials.token
 
 
-AUTH_TOKEN = get_access_token()
-    
 def generate_prompt(parsed_results,query):
     tool_results = call_vertex_ai_gemini_model(query)
     noti_list = tool_results
@@ -87,7 +85,7 @@ def generate_prompt(parsed_results,query):
     - 사용자의 질문이 고시된 내용에 대해 알고 싶어하는 질문이면서 기간을 포함한 질문일 경우 {noti_list}만을 사용해서 답변합니다. 
         검색 결과를 확인하여 다음 두 가지 경우에 따라 처리합니다:
         - {noti_list}이  빈배열이 아닐경우:
-      4
+        4
             {noti_list}에 results 리스트 안에  모든 객체 정보를 표로 출력합니다. 각 객체는 다음과 같은 속성을 가집니다:
             revision_date: 고시일 or ""
             notification_number: 고시번호
@@ -236,6 +234,7 @@ def index(request: QueryRequest):
         query = request.query
         print("사용자 질문 : ",query)
         if query:
+            AUTH_TOKEN = get_access_token()
             headers = {
                 "Authorization": f"Bearer {AUTH_TOKEN}",
                 "Content-Type": "application/json"
