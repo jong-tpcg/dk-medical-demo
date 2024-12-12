@@ -6,26 +6,25 @@ import UserInput from "@/components/ui/chat/user-input";
 import { ScrollButtons } from "@/components/ui/chat/scroll-buttons";
 import { useChatStore } from "@/store/chatStore";
 import { DefaultChatMessageType, UserMessage } from "@/components/ui/chat";
-import { useOutletContext } from "react-router-dom";
 import { useMemo } from "react";
 import { ArkMessageBox } from "@/components/ui/chat/ark-message-box";
 import { ArkDefault } from "@/components/ui/chat/ark-default";
 import { agentConfig } from "./agentConfig";
 import axios from "axios";
 
-type OutletContextType = {
-  selectedAgent: string;
-};
-
 export const AgentsChatCommon = () => {
   const agentChatList = useChatStore((state) => state.agentChatList);
   const addChatMessage = useChatStore((state) => state.addChatMessage);
   const resetChatList = useChatStore((state) => state.resetChatList);
+  const setQnaList = useChatStore((state) => state.setQnaList);
+  const selectedAgent = useChatStore((state) => state.selectedAgent);
+  const setRelatedQuestionsList = useChatStore(
+    (state) => state.setRelatedQuestionsList
+  );
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [inputValue, setInputValue] = useState<string>("");
   const [messageApi, contextHolder] = message.useMessage();
-  const { selectedAgent } = useOutletContext<OutletContextType>();
-  const { initialMessage } = agentConfig[selectedAgent];
+  const { initialMessage } = agentConfig[selectedAgent!];
   const { Link } = Typography;
   const chatMessages = useMemo(() => {
     if (selectedAgent && selectedAgent in agentChatList) {
@@ -51,8 +50,9 @@ export const AgentsChatCommon = () => {
         type: "loading",
       };
       sendMessage(inputValue);
-      addChatMessage(selectedAgent, userMessage);
-      addChatMessage(selectedAgent, newAnswerMessage);
+      addChatMessage(selectedAgent!, userMessage);
+      addChatMessage(selectedAgent!, newAnswerMessage);
+      setQnaList("loading");
       setInputValue("");
     } else {
       messageApi.warning("메시지를 입력해주세요.");
@@ -68,7 +68,7 @@ export const AgentsChatCommon = () => {
     // https://demo-app-test-556320446019.us-central1.run.app
     // http://127.0.0.1:8000
     axios
-      .post("https://demo-app-test-556320446019.us-central1.run.app", {
+      .post("http://127.0.0.1:8010", {
         query: query,
       })
       .then((res) => {
@@ -77,10 +77,20 @@ export const AgentsChatCommon = () => {
           const data = res.data;
           updateLastAiMessage({
             message: data.filter_text ? data.filter_text : data.answer_text,
-            tools: data.references,
+            tools: data.references.length > 0 ? data.references : null,
             type: "success",
           });
+
+          setQnaList(data.related_qna_list);
+          setRelatedQuestionsList(data.related_questions);
         }
+      })
+      .catch((err) => {
+        console.log(err);
+        updateLastAiMessage({
+          message: "에러가 발생했습니다. 다시 시도해주세요.",
+          type: "error",
+        });
       });
   };
   const updateLastAiMessage = useCallback(
@@ -204,7 +214,7 @@ export const AgentsChatCommon = () => {
         onInputChange={setInputValue}
         onSendMessage={handleSendMessage}
         onResetChat={() => {
-          resetChatList(selectedAgent);
+          resetChatList(selectedAgent!);
         }}
       />
     </div>

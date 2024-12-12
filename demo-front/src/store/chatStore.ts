@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { agentConfig } from "@/features/agents/agentConfig";
-import { DefaultChatMessageType } from "@/components/ui/chat";
+import { DefaultChatMessageType, QnaStore } from "@/components/ui/chat";
 
 export type ChatTypeMap = {
   default: DefaultChatMessageType[];
@@ -11,16 +11,14 @@ type AgentChatDataType = {
     | ChatTypeMap[(typeof agentConfig)[key]["type"]]
     | [];
 };
-type QnaStore = {
-  answer: string;
-  question: string;
-  documnt_title: string;
-  documnt_content: string;
-};
 type ChatStore = {
+  selectedAgent: string | null;
   agentChatList: AgentChatDataType;
-  qnalist: QnaStore[] | null;
-  setQnaList: (qnaList: QnaStore[]) => void;
+  qnaList: QnaStore[] | [] | "loading";
+  relatedQuestionsList: [] | [] | "loading";
+  setSelectedAgent: (selectedAgent: string | null) => void;
+  setRelatedQuestionsList: (relatedQuestionsList: [] | "loading") => void;
+  setQnaList: (qnaList: QnaStore[] | "loading" | []) => void;
   addChatMessage: <T extends keyof AgentChatDataType>(
     agent: T,
     message: ChatTypeMap[(typeof agentConfig)[T]["type"]][number]
@@ -29,9 +27,17 @@ type ChatStore = {
 };
 
 export const useChatStore = create<ChatStore>((set) => ({
-  qnalist: null,
+  selectedAgent: null,
+  qnaList: [],
+  relatedQuestionsList: [],
+  setSelectedAgent: (selectedAgent) => {
+    set({ selectedAgent });
+  },
+  setRelatedQuestionsList: (relatedQuestionsList) => {
+    set({ relatedQuestionsList });
+  },
   setQnaList: (qnaList) => {
-    set({ qnalist: qnaList });
+    set({ qnaList: qnaList });
   },
   agentChatList: Object.keys(agentConfig).reduce((acc, key) => {
     acc[key as keyof typeof agentConfig] = []; // 초기값은 빈 배열

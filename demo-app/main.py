@@ -81,12 +81,10 @@ def generate_prompt(parsed_results,query):
     Step-by-step instructions:
 
     1. 사용자가 입력한 질문 {query}의 내용을 분석하여 질문의 의도를 명확히 파악합니다. 이후, 질문에 유형에 따라 정보를 선택하여 정보내에서 답변합니다.
-    3.  답변은 질문의 유형에 따라 달라지며, 아래와 같이 제공됩니다:
-    [공통]: 답변은 요약된 형태로 제공되어야 하며, 주요 내용은 명확하게 설명되어야 합니다.  질문의 유형에 따라 {noti_list} 또는 {reference_map} 중 하나의 정보만을 참고하여 답변을 생성합니다.
-    - 사용자의 질문이 고시된 내용에 대해 알고 싶어하는 질문이면서 기간을 포함한 질문일 경우 {noti_list}만을 사용해서 답변합니다. 
-        검색 결과를 확인하여 다음 두 가지 경우에 따라 처리합니다:
+    2.  답변은 질문의 유형에 따라 달라지며, 아래와 같이 제공됩니다:
+    [공통]: 답변은 요약된 형태로 제공되어야 하며, 주요 내용은 명확하게 설명되어야 합니다.  답변을 생성할때는 질문의 유형에 따라 {noti_list} 또는 {reference_map} 중 하나의 정보만을 참고하여 답변을 생성합니다.
+    - 사용자의 질문이 고시된 내용에 대해 알고 싶어하는 질문이면서 특정고시에 대해 물어보는게 아닌 기간을 포함해 여러개의 고시에 대해 알고 싶은 질문일 경우 {noti_list}를 사용해서 답변합니다. 검색 결과를 확인하여 다음 두 가지 경우에 따라 처리합니다:
         - {noti_list}이  빈배열이 아닐경우:
-        4
             {noti_list}에 results 리스트 안에  모든 객체 정보를 표로 출력합니다. 각 객체는 다음과 같은 속성을 가집니다:
             revision_date: 고시일 or ""
             notification_number: 고시번호
@@ -146,7 +144,7 @@ def generate_prompt(parsed_results,query):
 
     or
     
-    "기간내에 고시된 데이터가 없습니다."
+    기간내에 고시된 데이터가 없습니다.
 
     ---
 
@@ -205,10 +203,11 @@ def generate_prompt(parsed_results,query):
         "answer_text": response.text,
         "references": reference_map,
         "related_questions": parsed_results.get('answer', {}).get('relatedQuestions', []),
-        "qna_results": qna_results
+        "related_qna_list": qna_results
     }
     fact_parsing = fact_parser(parsed_results)
-    if(len(fact_parsing) != 0):
+    if(len(fact_parsing) != 0 and "|-" not in response.text and "|" not in response.text ):
+        print("=================FILTER REQUEST===================")
         result_parse = client.check_grounding(
             project_id=PROJECT_NUMBER,
             answer_candidate=response.text,
@@ -223,7 +222,8 @@ def generate_prompt(parsed_results,query):
                 source_index = int(chunk['source'])
                 chunk["url_page"] = reference_map[source_index].get('url_page', '#')
                 chunk["title"] = f"{reference_map[source_index].get("title", "Unknown")}_page_{reference_map[source_index].get("pageIdentifier", "Unknown")}" 
-        
+            # 중복 url 제거
+            existing_urls = set()
             for claim in result_parse["claims"]:
                 if claim.get("citationIndices"):
                     print("================claim")
@@ -247,12 +247,10 @@ def generate_prompt(parsed_results,query):
                             parsed_url.query,     # 쿼리는 없으므로 그대로
                             fragment              # #page=3 그대로 유지
                         ))
-                        url = f"[{source_title}]({encoded_url})"
-                        if url not in source_text:
+                        if encoded_url not in existing_urls:
+                            url = f"[{source_title}]({encoded_url})"
                             source_text += f" [{source_title}]({encoded_url})"
-                    
-                    print("삽입 텍스트", source_text)
-                    print("텍스트위치", claim["claimText"])    
+                            existing_urls.add(encoded_url)  # URL 추가 
                     claim_text = claim["claimText"]
     
                     # 텍스트 위치 찾기

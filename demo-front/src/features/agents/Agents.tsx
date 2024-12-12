@@ -13,6 +13,9 @@ import Sider from "antd/es/layout/Sider";
 import IImg from "@/assets/agents/1.jpg";
 import NImg from "@/assets/agents/2.jpg";
 import DImg from "@/assets/agents/3.jpg";
+import { useChatStore } from "@/store/chatStore";
+import { Spinner } from "@/components/ui/spinner/Spinner";
+import { DefaultChatMessageType, QnaStore } from "@/components/ui/chat";
 
 const agents = [
   {
@@ -37,12 +40,18 @@ const agents = [
 export const Agents = () => {
   const navigate = useNavigate();
   const { Option } = Select;
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const rowRef = useRef<HTMLDivElement | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [collapsed, setCollapsed] = useState(false);
+  const selectedAgent = useChatStore((state) => state.selectedAgent);
+  const setSelectedAgent = useChatStore((state) => state.setSelectedAgent);
+  const qnaList = useChatStore((state) => state.qnaList);
+  // const relatedQuestionsList = useChatStore(
+  //   (state) => state.relatedQuestionsList
+  // );
+  const addChatMessage = useChatStore((state) => state.addChatMessage);
 
   const handleCardClick = (route: string) => {
     //agents에서 선택한 agent의 route에 해당하는 객체의 status확인
@@ -60,6 +69,7 @@ export const Agents = () => {
       const agent = currentPath.split("/").pop();
       if (agent) setSelectedAgent(agent);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scrollRight = () => {
@@ -92,7 +102,25 @@ export const Agents = () => {
       setShowRightArrow(scrollLeft + clientWidth < scrollWidth);
     }
   };
-
+  const addQnaToChat = (qna: QnaStore) => {
+    if (!selectedAgent) return;
+    const userMessage: DefaultChatMessageType = {
+      message: qna.question,
+      tools: null,
+      time: new Date().toLocaleTimeString(),
+      sender: "user",
+      model: "default",
+    };
+    const newAnswerMessage: DefaultChatMessageType = {
+      message: qna.answer,
+      tools: null,
+      time: new Date().toLocaleTimeString(),
+      sender: "ai",
+      model: "default",
+    };
+    addChatMessage(selectedAgent, userMessage);
+    addChatMessage(selectedAgent, newAnswerMessage);
+  };
   useEffect(() => {
     const row = rowRef.current;
     if (!row) return;
@@ -125,7 +153,7 @@ export const Agents = () => {
   }, []);
 
   return (
-    <div className="chat-container">
+    <div className="agent-box-container">
       <Sider width={200} className="chat-sider" collapsed={collapsed}>
         <Button
           onClick={() => setCollapsed(!collapsed)}
@@ -260,7 +288,7 @@ export const Agents = () => {
             )}
           </div>
         </div>
-        {selectedAgent && <Outlet context={{ selectedAgent }} />}
+        {selectedAgent && <Outlet />}
       </div>
       <div className="task-sider-wrapper">
         <Card
@@ -298,19 +326,28 @@ export const Agents = () => {
             </ul>
           </div>
           <div className="task-block">
-            <h5>자주 하는 질문</h5>
+            <h5>QNA</h5>
             <ul>
-              <li>최근 고시 목록 </li>
-              <li>예정 고시 목록</li>
-              <li>응급의료수가 관련</li>
-            </ul>
-          </div>
-          <div className="task-block">
-            <h5>사용자 정의 자주 하는 질문</h5>
-            <ul>
-              <li>최근 고시 목록</li>
-              <li>예정 고시 목록</li>
-              <li>응급의료수가 관련</li>
+              {qnaList === "loading" ? (
+                <Spinner type="llm" />
+              ) : (
+                qnaList?.map((qna, id) => (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      addQnaToChat(qna);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "blue",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <li>{qna.question}</li>
+                  </button>
+                ))
+              )}
             </ul>
           </div>
         </Card>
