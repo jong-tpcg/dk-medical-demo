@@ -221,7 +221,7 @@ def generate_prompt(parsed_results,query):
             for chunk in result_parse["citedChunks"]:
                 source_index = int(chunk['source'])
                 chunk["url_page"] = reference_map[source_index].get('url_page', '#')
-                chunk["title"] = f"{reference_map[source_index].get("title", "Unknown")}_page_{reference_map[source_index].get("pageIdentifier", "Unknown")}" 
+                chunk["title"] = f"{reference_map[source_index].get('title', 'Unknown')}_page_{reference_map[source_index].get('pageIdentifier', 'Unknown')}"
             # 중복 url 제거
             existing_urls = set()
             for claim in result_parse["claims"]:
@@ -249,8 +249,9 @@ def generate_prompt(parsed_results,query):
                         ))
                         if encoded_url not in existing_urls:
                             url = f"[{source_title}]({encoded_url})"
-                            source_text += f" [{source_title}]({encoded_url})"
+                            source_text += url
                             existing_urls.add(encoded_url)  # URL 추가 
+
                     claim_text = claim["claimText"]
     
                     # 텍스트 위치 찾기
