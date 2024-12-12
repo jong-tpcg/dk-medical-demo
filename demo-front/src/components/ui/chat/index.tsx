@@ -21,3 +21,9 @@ export interface RefereceType {
   pageIdentifier: string;
   relevanceScore: number;
 }
+export interface QnaStore {
+  answer: string;
+  question: string;
+  documnt_title: string;
+  documnt_content: string;
+}

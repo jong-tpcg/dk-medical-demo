@@ -168,7 +168,7 @@ export const MedicalSummary = () => {
             </ArkMessageBox>
           ) : !isLoading && !audioSrc ? (
             <ArkMessageBox
-              message="안녕하세요. 의료보험심사 Assistant 입니다. 음성파일을
+              message="안녕하세요. 진료상담 요약 Assistant 입니다. 음성파일을
               업로드해주시면 텍스트 추출 및 요약 작업을 진행합니다."
             />
           ) : isLoading ? (
