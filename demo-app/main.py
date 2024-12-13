@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from google.auth.transport.requests import Request
+import google.auth
 import uvicorn
 from pydantic import BaseModel
 import requests
@@ -45,14 +46,14 @@ app.add_middleware(
 
 
 def get_access_token():
-    # credentials, project = google.auth.default()
-    # credentials.refresh(Request())
+    credentials, project = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    request = Request()
+    credentials.refresh(request)
     
-    credentials = Credentials.from_service_account_file(
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'],
-    scopes=["https://www.googleapis.com/auth/cloud-platform"] 
-    )
-    credentials.refresh(Request()) 
+    # credentials = Credentials.from_service_account_file(
+    # os.environ['GOOGLE_APPLICATION_CREDENTIALS'],
+    # scopes=["https://www.googleapis.com/auth/cloud-platform"] 
+    # )
     return credentials.token
 
 
@@ -99,7 +100,7 @@ def generate_prompt(parsed_results,query):
                 | 고시일         | 고시번호      | 시행일         | 고시 내용 요약          |
                 |---------------|---------------|---------------|-------------------------|
                 | 2024-11-01    | 2024-101      | 2024-11-10    | 요양급여 기준 변경     |
-            -  markdown형태로 만들어진 표와 함께 모두 텍스트로 반환됩니다.
+            -  markdown형태로 만들어진 표와 함께 어떤 데이터를 제공해주는지에 대한 소개 텍스트와 함께(ex. 요청하신 9월 고시목록입니다. / 가장 최근 고시목록 3개입니다.) 모두 텍스트로 반환됩니다.
         -  {noti_list}가 빈배열일경우:
             다른 텍스트 없이 "기간내에 고시된 데이터가 없습니다."라는 메시지만 반환합니다.
     -**특정 내용에 대한 질문 (예: 기간없이 특정 고시 내용질문, 기준, 응급실 재방문시 수가 산정기준 등) 유형일 경우:  
@@ -122,6 +123,7 @@ def generate_prompt(parsed_results,query):
     6. 질문의 유형(기간 포함 여부, 특정 내용 요구 등)에 따라 답변 형식을 명확히 구분하고, 불필요한 표 또는 요약이 생성되지 않게 합니다. 모든 질문에 대한 답변은 {reference_map} 또는 {noti_list} 둘 중 하나의 정보만 참고하여 생성되어야 합니다.
     7. {noti_list}를 사용했는데 {reference_map}도 사용했을 경우 처음 사용했던 {noti_list}만을 사용하여 답변을 생성합니다.
     8. 표에 사용된 데이터가 {noti_list}가 아닌 경우, 표를 삭제하고 해당 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
+    9. 표에 사용된 데이터가 정확한 정보인지 확인하고, 아닐 경우 표를 삭제하고 해당 기간내에 고시 정보가 없습니다. 라는 텍스트를 반환합니다.
     </task>
 
     <format>
@@ -137,15 +139,18 @@ def generate_prompt(parsed_results,query):
 
     질문: 최근 한달내 고시된 내용을 알려주세요.
 
-    응답: 아래는 “요양급여의 적용기준 및 방법에 관한 세부사항”에 대한 최근 한달 동안 공지된 고시 목록입니다.
+    응답:  최근 한달 동안 공지된 고시 목록입니다.
 
     | 고시일         | 고시번호                        | 시행일       | 고시내용요약                |
     |---------------|--------------------------------|------------|---------------------------|
 
-    or
     
-    기간내에 고시된 데이터가 없습니다.
+    질문: 최근 고시목록 알려줘 
 
+    응답: 가장 최근 고시된 상위 3개 목록입니다.
+
+    | 고시일         | 고시번호                        | 시행일       | 고시내용요약                |
+    |---------------|--------------------------------|------------|---------------------------|
     ---
 
     ### Example 2: Specific Notice Query
@@ -203,7 +208,8 @@ def generate_prompt(parsed_results,query):
         "answer_text": response.text,
         "references": reference_map,
         "related_questions": parsed_results.get('answer', {}).get('relatedQuestions', []),
-        "related_qna_list": qna_results
+        "related_qna_list": qna_results,
+        "tool_results": noti_list
     }
     fact_parsing = fact_parser(parsed_results)
     if(len(fact_parsing) != 0 and "|-" not in response.text and "|" not in response.text ):
