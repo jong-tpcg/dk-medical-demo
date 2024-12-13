@@ -17,12 +17,11 @@ def get_access_token():
     credentials.refresh(Request())
     return credentials.token
 
-AUTH_TOKEN = get_access_token()
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        AUTH_TOKEN = get_access_token()
         query = request.form.get('query')
         if query:
             headers = {

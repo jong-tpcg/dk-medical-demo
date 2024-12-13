@@ -42,7 +42,6 @@ def get_access_token():
     credentials.refresh(Request())
     return credentials.token
 
-AUTH_TOKEN = get_access_token()
     
 def generate_prompt(parsed_results,query):
     # references = parsed_results.get('answer', {}).get('references', [])
@@ -230,6 +229,7 @@ def index(request: QueryRequest):
         query = request.query
         print("사용자 질문 : ",query)
         if query:
+            AUTH_TOKEN = get_access_token()
             headers = {
                 "Authorization": f"Bearer {AUTH_TOKEN}",
                 "Content-Type": "application/json"
