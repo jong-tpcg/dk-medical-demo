@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from google.auth.transport.requests import Request
+import google.auth
 import uvicorn
 from pydantic import BaseModel
 import requests
@@ -45,14 +46,14 @@ app.add_middleware(
 
 
 def get_access_token():
-    # credentials, project = google.auth.default()
-    # credentials.refresh(Request())
+    credentials, project = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    request = Request()
+    credentials.refresh(request)
     
-    credentials = Credentials.from_service_account_file(
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'],
-    scopes=["https://www.googleapis.com/auth/cloud-platform"] 
-    )
-    credentials.refresh(Request()) 
+    # credentials = Credentials.from_service_account_file(
+    # os.environ['GOOGLE_APPLICATION_CREDENTIALS'],
+    # scopes=["https://www.googleapis.com/auth/cloud-platform"] 
+    # )
     return credentials.token
 
 
