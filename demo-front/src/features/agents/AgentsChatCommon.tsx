@@ -91,6 +91,7 @@ export const AgentsChatCommon = () => {
           message: "에러가 발생했습니다. 다시 시도해주세요.",
           type: "error",
         });
+        setQnaList([]);
       });
   };
   const updateLastAiMessage = useCallback(

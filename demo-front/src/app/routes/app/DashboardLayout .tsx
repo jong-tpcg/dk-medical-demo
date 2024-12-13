@@ -7,7 +7,7 @@ import { Footer } from "antd/es/layout/layout";
 import { useEffect, useState } from "react";
 import { AiOutlineComment, AiOutlineDashboard } from "react-icons/ai";
 import { MdOutlineMedicalServices } from "react-icons/md";
-import { TbBook2 } from "react-icons/tb";
+import { TbBook2, TbNurse } from "react-icons/tb";
 import { FaInfo, FaRegCircleQuestion } from "react-icons/fa6";
 
 const { Header, Sider, Content } = Layout;
@@ -29,6 +29,11 @@ const items = [
         key: "summary",
         label: <p>진료상담 요약</p>,
         icon: <MdOutlineMedicalServices size={20} />,
+      },
+      {
+        key: "nurse_summary",
+        label: <p>간호인계정보 요약 요약</p>,
+        icon: <TbNurse size={20} />,
       },
     ],
   },
@@ -69,6 +74,12 @@ export const DashboardLayout = () => {
       if (e.key === "dashboard") {
         return window.open(
           "https://hallym-poc-demo-556320446019.us-central1.run.app/",
+          "_blank"
+        );
+      }
+      if (e.key === "nurse_summary") {
+        return window.open(
+          "https://nurse-image-summary-556320446019.us-central1.run.app/",
           "_blank"
         );
       } else {
