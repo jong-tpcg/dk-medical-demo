@@ -32,7 +32,7 @@ const items = [
       },
       {
         key: "nurse_summary",
-        label: <p>간호인계정보 요약 요약</p>,
+        label: <p>간호인계정보 요약</p>,
         icon: <TbNurse size={20} />,
       },
     ],
