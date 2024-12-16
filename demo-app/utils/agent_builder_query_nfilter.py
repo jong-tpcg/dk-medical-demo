@@ -18,9 +18,24 @@ class DiscoveryEngineClient:
         - project_number (str): Your Google Cloud project number.
         - data_store_id (str): Your data store ID.
         """
+        # Initialize credentials
+        self.credentials, _ = google.auth.default(
+            scopes=['https://www.googleapis.com/auth/cloud-platform']
+        )
         self.project_number = project_number
         self.data_store_id = data_store_id
         self.access_token = self.get_default_access_token()
+        
+    def refresh_access_token(self):
+        """
+        Refreshes the access token using the credentials.
+
+        Returns:
+        - str: The refreshed access token.
+        """
+        if not self.credentials.valid:
+            self.credentials.refresh(Request())
+        return self.credentials.token
 
     @staticmethod
     def get_default_access_token():
@@ -37,8 +52,10 @@ class DiscoveryEngineClient:
         # Refresh the credentials to get an access token
         credentials.refresh(Request())
 
+
         # Get the access token
         access_token = credentials.token
+        
 
         return access_token
 
@@ -54,6 +71,9 @@ class DiscoveryEngineClient:
         Returns:
         - dict: The JSON response from the API.
         """
+        
+        self.access_token = self.refresh_access_token()
+
         # Prepare the authorization header
         headers = {
             'Authorization': f'Bearer {self.access_token}',
@@ -86,7 +106,7 @@ class DiscoveryEngineClient:
 
         # Check for errors
         if response.status_code != 200:
-            raise Exception(f'API request failed with status code {response.status_code}: {response.text}')
+            raise Exception(f'(Search)API request failed with status code {response.status_code}: {response.text}')
         
         response.encoding = 'utf-8'
         # Return the JSON response
@@ -132,7 +152,7 @@ class DiscoveryEngineClient:
 
         # Check for errors
         if response.status_code != 200:
-            raise Exception(f'API request failed with status code {response.status_code}: {response.text}')
+            raise Exception(f'(Check)API request failed with status code {response.status_code}: {response.text}')
 
         response.encoding = 'utf-8'
         # Return the JSON response

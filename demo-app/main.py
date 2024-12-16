@@ -133,6 +133,7 @@ def generate_prompt(parsed_results,query):
     모든 텍스트는 <code></code> 태그로 감싸지 않습니다.
     최종응답에 json형식이 들어가지 않습니다.
     표에 사용된 데이터가 {noti_list}가 아닌 경우, 표를 삭제하고 해당 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
+    표는 절대 예시데이터를 사용하지 않고 표에 넣을 데이터가 없다면 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
     </format>
     <example>
     ### Example 1: Recent Notices Query
