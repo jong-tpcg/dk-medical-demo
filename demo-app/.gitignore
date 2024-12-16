@@ -110,6 +110,3 @@ settings.json
 ._.DS_Store
 **/.DS_Store
 **/._.DS_Store
-
-# credentials
-dk_credentials.json

@@ -5,10 +5,6 @@ ENV PYTHONUNBUFFERED True
 ENV APP_HOME /demo-app
 WORKDIR $APP_HOME
 
-#  Credentials
-COPY dk_credentials.json $APP_HOME/dk_credentials.json
-ENV GOOGLE_APPLICATION_CREDENTIALS=$APP_HOME/dk_credentials.json
-
 # Copy the requirements file into the container
 RUN pip install --upgrade pip
 COPY requirements.txt  $APP_HOME/requirements.txt
