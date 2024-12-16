@@ -24,6 +24,6 @@ export interface RefereceType {
 export interface QnaStore {
   answer: string;
   question: string;
-  documnt_title: string;
-  documnt_content: string;
+  document_title: string;
+  document_uri: string;
 }

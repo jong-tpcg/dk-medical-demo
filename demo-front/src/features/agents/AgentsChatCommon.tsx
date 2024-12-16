@@ -11,6 +11,7 @@ import { ArkMessageBox } from "@/components/ui/chat/ark-message-box";
 import { ArkDefault } from "@/components/ui/chat/ark-default";
 import { agentConfig } from "./agentConfig";
 import axios from "axios";
+import useAutoScrollToBottom from "@/utils/useAutoScrollToBottom";
 
 export const AgentsChatCommon = () => {
   const agentChatList = useChatStore((state) => state.agentChatList);
@@ -32,7 +33,7 @@ export const AgentsChatCommon = () => {
     }
     return [];
   }, [agentChatList, selectedAgent]);
-
+  useAutoScrollToBottom(chatMessages);
   const handleSendMessage = async () => {
     if (inputValue.trim() !== "") {
       const userMessage: DefaultChatMessageType = {
@@ -68,7 +69,7 @@ export const AgentsChatCommon = () => {
     // https://demo-app-test-556320446019.us-central1.run.app
     // http://127.0.0.1:8000
     axios
-      .post("https://demo-app-test-556320446019.us-central1.run.app", {
+      .post("http://127.0.0.1:8010", {
         query: query,
       })
       .then((res) => {
@@ -77,7 +78,7 @@ export const AgentsChatCommon = () => {
           const data = res.data;
           updateLastAiMessage({
             message: data.filter_text ? data.filter_text : data.answer_text,
-            tools: data.references.length > 0 ? data.references : null,
+            tools: data.tools_data > 0 ? data.references_data : null,
             type: "success",
           });
 
@@ -160,7 +161,6 @@ export const AgentsChatCommon = () => {
                   >
                     References
                   </Button>
-
                   <ScrollModal
                     title=" References"
                     isVisible={isModalVisible}

@@ -1,42 +1,45 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const useAutoScrollToBottom = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dependencyArray: any[] | null,
-  arkStatus: string,
+  dependencyArray: any[], // 배열
   delay = 200
 ) => {
+  const previousLength = useRef(dependencyArray.length); // 이전 배열 길이를 저장하는 ref
+
   useEffect(() => {
-    // 처음에 약간의 지연 후 스크롤을 맨 아래로 설정
-    const initialScrollTimer = setTimeout(() => {
+    const scrollToBottom = () => {
       window.scrollTo({
         top: document.body.scrollHeight,
         behavior: "smooth",
       });
-    }, delay); // 지연 시간 기본값 200ms
+    };
 
-    // 메시지가 추가된 후 스크롤 확인 및 이동
-    if (arkStatus !== "default") {
+    // 초기 스크롤 설정
+    const initialScrollTimer = setTimeout(() => {
+      scrollToBottom();
+    }, delay);
+
+    // 배열의 길이가 변경되면 스크롤을 아래로 이동
+    if (previousLength.current !== dependencyArray.length) {
+      console.log("scrolling");
       const scrollCheckTimer = setTimeout(() => {
-        if (window.scrollY + window.innerHeight < document.body.scrollHeight) {
-          window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      }, delay * 2); // 두 번째 타이머
+        scrollToBottom();
+      }, delay);
+
+      previousLength.current = dependencyArray.length; // 최신 배열 길이로 업데이트
 
       // 클린업
       return () => {
-        clearTimeout(initialScrollTimer);
         clearTimeout(scrollCheckTimer);
       };
     }
 
+    // 클린업
     return () => {
       clearTimeout(initialScrollTimer);
     };
-  }, [arkStatus, delay, dependencyArray]);
+  }, [dependencyArray, delay]);
 };
 
 export default useAutoScrollToBottom;
