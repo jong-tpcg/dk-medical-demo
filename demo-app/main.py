@@ -119,8 +119,8 @@ def generate_prompt(model, reference_data,tool_data, query):
     tool_data = tool_data.get("results", [])
     
     # print("SourceData(Reference):",reference_data)
-    # print("Tool Call Status:",tool_call_status)
-    # print("Tool Data:",tool_data)
+    print("Tool Call Status:",tool_call_status)
+    print("Tool Data:",tool_data)
         
     ## model prompt
     vertexai.init(project="dk-medical-solutions", location="us-central1")
@@ -131,19 +131,17 @@ def generate_prompt(model, reference_data,tool_data, query):
     
     prompt = f"""
     <role>
-        당신은 D-Chat이라는 도메인 특화 대화형 어시스턴트입니다. 당신의 역할은 의료보험 심사 규정에 기반하여 정확하고 구조화된 응답을 제공하는 것입니다. 사용자가 질문하는 내용에 따라 명확하고 최신 정보를 제공하세요.
-        주의:
-        - 질문이 명확하지 않을 경우, 어시스턴트는 필요한 추가 정보를 요청할 수 있습니다.
-        - 어시스턴트는 주어진 정보 외의 내용을 유추하거나 생성하지 않습니다.
+    당신은 D-Chat이라는 도메인 특화 대화형 어시스턴트입니다. 당신의 역할은 의료보험 심사 규정에 기반하여 정확하고 구조화된 응답을 제공하는 것입니다. 사용자가 질문하는 내용에 따라 명확하고 최신 정보를 제공하세요.
     </role>
     <task>
     Step-by-step instructions:
 
     1. 사용자가 입력한 질문 {query}의 내용을 분석하여 질문의 의도를 명확히 파악합니다. 이후, 질문에 유형에 따라 정보를 선택하여 정보내에서 답변합니다.
-    2.  답변은 질문의 유형에 따라 달라지며, 답변을 생성할때는 질문의 유형에 따라 {tool_data} 또는 {reference_data} 중 하나의 정보만을 참고하여 답변을 생성합니다.
-    - {tool_call_status}가 True일 경우
-        1. {tool_data}이  빈배열이 아닐경우:
-            {tool_data}안에  모든 객체 정보를 표로 출력합니다. 각 객체는 다음과 같은 속성을 가집니다:
+    2.  답변은 질문의 유형에 따라 달라지며, 아래와 같이 제공됩니다:
+    [공통]: 답변은 요약된 형태로 제공되어야 하며, 주요 내용은 명확하게 설명되어야 합니다.  답변을 생성할때는 질문의 유형에 따라 {tool_data} 또는 {reference_data} 중 하나의 정보만을 참고하여 답변을 생성합니다.
+    - 사용자의 질문이 고시된 내용에 대해 알고 싶어하는 질문이면서 특정고시에 대해 물어보는게 아닌 기간을 포함해 여러개의 고시에 대해 알고 싶은 질문일 경우 {tool_data}를 사용해서 답변합니다. 검색 결과를 확인하여 다음 두 가지 경우에 따라 처리합니다:
+        - {tool_data}이  빈배열이 아닐경우:
+            {tool_data}에 results 리스트 안에  모든 객체 정보를 표로 출력합니다. 각 객체는 다음과 같은 속성을 가집니다:
             revision_date: 고시일 or ""
             notification_number: 고시번호
             effective_date: 시행일 or ""
@@ -158,32 +156,29 @@ def generate_prompt(model, reference_data,tool_data, query):
                 |---------------|---------------|---------------|-------------------------|
                 | 2024-11-01    | 2024-101      | 2024-11-10    | 요양급여 기준 변경     |
             -  markdown형태로 만들어진 표와 함께 어떤 데이터를 제공해주는지에 대한 소개 텍스트와 함께(ex. 요청하신 9월 고시목록입니다. / 가장 최근 고시목록 3개입니다.) 모두 텍스트로 반환됩니다.
-        2. {tool_data}가 빈배열일경우:
+        -  {tool_data}가 빈배열일경우:
             다른 텍스트 없이 "기간내에 고시된 데이터가 없습니다."라는 메시지만 반환합니다.
-    - **특정 내용에 대한 질문 (예: 기간없이 특정 고시 내용질문, 기준, 응급실 재방문시 수가 산정기준 등) 유형일 경우:  
-       - 주어진 {reference_data}는 {query}에 맞는 정보 객체의 리스트로 구성되어 있습니다. **모든 객체의 `content` 필드를 순차적으로 분석하고**, 각 객체에서 질문에 대한 핵심 정보를 추출한 뒤 **모든 내용을 종합**하여 답변을 생성합니다.  
-            각 객체는 다음과 같은 속성을 포함합니다:
-            - id: 객체의 id, - 답변에는 사용하지 않습니다.
-            - title :  content를 가지고 온 문서의 제목
-            - content: 질문과 관련된 문서의 세부 내용.
-            - 요구 사항:  
-        - **각 객체의 `content`**를 개별적으로 분석하고, 내용을 요약하여 하나의 응답에 포함합니다.  
-        - 기준에 대해 질문했을 경우 요약해서 답변하지 않고 세부 기준에 대해서 자세히 설명합니다.
-        - 리스트 형태로 나열하며 **항상 다음 형식**을 유지합니다:  
-        
-            **굵은 글씨 헤더**  
-            1. 첫 번째 객체의 요약된 내용  
-            2. 두 번째 객체의 요약된 내용  
-            3. 세 번째 객체의 요약된 내용  
-        
-        - 중복된 내용은 병합하고, 불필요한 문구는 제거합니다.  
-        - `title`과 `id`는 응답에 포함하지 않습니다.  
+    -**특정 내용에 대한 질문 (예: 기간없이 특정 고시 내용질문, 기준, 응급실 재방문시 수가 산정기준 등) 유형일 경우:  
+        질문에 관련된 정보를 {reference_data}에서 검색하여 응답합니다.  
+        어떤 자료를 어떻게 참고해서 답변했는지에 대한 정보를 제공해야 합니다.
+        - {reference_data}은 정보 객체의 리스트로 구성되며, 각 객체는 다음과 같은 속성을 포함합니다:
+            - id: 사용하지 않습니다.
+            - title :  content를 뽑아낸 문서의 제목
+            - content: 질문과 관련된 문서의 세부 내용을 포함하며, 이미 질문과 관련된 텍스트만을 뽑아낸 상태입니다.
+        - 각 객체의 content 필드의 모든 내용을 분석하여 질문의 주요 내용을 요약합니다.
+        - 모든 객체의 content를 요약하여 헤더와 함께 정리된 리스트 형태로 제공하며, 하위 목록은 1., 2., 3. 형식으로 나열합니다.  
+        - 표는 생성하지 않습니다.
+        - 주요 변경 항목과 같이 리스트 형식은 1. 2. 3.과 같은 순서로 나열합니다.
+        - 리스트의 헤더는 항상 굵은 글씨로 표시합니다. 
+        - 요약 내용은 간결하고 명확하게 작성하며, 불필요한 반복이나 문구는 생략합니다.
+        - title은 답변에는 사용하지 않습니다. 어떤 문서를 참고했는지는 제공하지 않습니다.
         - {reference_data}이 비어 있는 경우:
             - "검색어에 대한 정보가 존재하지 않습니다."라는 메시지를 반환합니다.
-    
-    3. 각 문단이 끝난 후 한 개의 개행(빈 줄)을 추가하여 새로운 문단을 시작합니다. 
-    4. 질문의 유형(기간 포함 여부, 특정 내용 요구 등)에 따라 답변 형식을 명확히 구분하고, 불필요한 표 또는 요약이 생성되지 않게 합니다. 모든 질문에 대한 답변은 {reference_data} 또는 {tool_data} 둘 중 하나의 정보만 참고하여 생성되어야 합니다.
-    5. 표에 사용된 데이터가 {tool_data}가 아닌 경우, 표를 삭제하고 해당 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
+    4. 각 문단이 끝난 후 한 개의 개행(빈 줄)을 추가하여 새로운 문단을 시작합니다. 
+    6. 질문의 유형(기간 포함 여부, 특정 내용 요구 등)에 따라 답변 형식을 명확히 구분하고, 불필요한 표 또는 요약이 생성되지 않게 합니다. 모든 질문에 대한 답변은 {reference_data} 또는 {tool_data} 둘 중 하나의 정보만 참고하여 생성되어야 합니다.
+    7. {tool_data}를 사용했는데 {reference_data}도 사용했을 경우 처음 사용했던 {tool_data}만을 사용하여 답변을 생성합니다.
+    8. 표에 사용된 데이터가 {tool_data}가 아닌 경우, 표를 삭제하고 해당 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
+    9. 표에 사용된 데이터가 정확한 정보인지 확인하고, 아닐 경우 표를 삭제하고 해당 기간내에 고시 정보가 없습니다. 라는 텍스트를 반환합니다.
     </task>
 
     <format>
@@ -192,6 +187,7 @@ def generate_prompt(model, reference_data,tool_data, query):
     질문의 유형에 따라 적절한 형식으로 구분하여 형식에 맞는 데이터를 사용하여 응답합니다.
     모든 텍스트는 <code></code> 태그로 감싸지 않습니다.
     최종응답에 json형식이 들어가지 않습니다.
+    표에 사용된 데이터가 {tool_data}가 아닌 경우, 표를 삭제하고 해당 기간내에 고시 정보가 없습니다 라는 텍스트를 반환합니다.
     </format>
     <example>
     ### Example 1: Recent Notices Query
@@ -199,6 +195,14 @@ def generate_prompt(model, reference_data,tool_data, query):
     질문: 최근 한달내 고시된 내용을 알려주세요.
 
     응답:  최근 한달 동안 공지된 고시 목록입니다.
+
+    | 고시일         | 고시번호                        | 시행일       | 고시내용요약                |
+    |---------------|--------------------------------|------------|---------------------------|
+
+    
+    질문: 최근 고시목록 알려줘 
+
+    응답: 가장 최근 고시된 상위 3개 목록입니다.
 
     | 고시일         | 고시번호                        | 시행일       | 고시내용요약                |
     |---------------|--------------------------------|------------|---------------------------|
@@ -240,6 +244,7 @@ def generate_prompt(model, reference_data,tool_data, query):
     
     
     print("=================MODEL RESPONSE===================")
+    print(response.text)
     final = {
         "answer_text": response.text,
         "references_data": reference_data,
@@ -336,7 +341,7 @@ def index(request: QueryRequest):
         query = request.query
         model = request.model
         logger.info("사용자 질문: %s", query)
-        print(model)
+        print("모델",model,"사용자 질문",query)
         if query:
             reference_data = get_references(query)
             rerank_data = None
@@ -370,8 +375,8 @@ def index(request: QueryRequest):
                 prompt_data["related_qna_list"] = qna_results
                 prompt_data["related_questions"] = related_questions
                 #(테스트 용도) result 파일 저장
-                # with open("result.json", 'w', encoding='utf-8') as f:
-                #     json.dump(prompt_data, f, indent=4, ensure_ascii=False)
+                with open("result.json", 'w', encoding='utf-8') as f:
+                    json.dump(prompt_data, f, indent=4, ensure_ascii=False)
                 
                 if(prompt_data["references_data"] != []):
                     prompt_data["status"] = "success"
