@@ -11,10 +11,14 @@ export const AppRouter = () => {
       <Routes>
         <Route path="/" element={<DashboardLayout />}>
           <Route path="d-chat" element={<Agents />}>
-            <Route path="normal" element={<AgentsChatCommon />} />
             <Route path="insurance" element={<AgentsChatCommon />} />
             <Route path="nursing" element={<AgentsChatCommon />} />
             <Route path="treatment" element={<AgentsChatCommon />} />
+          </Route>
+          <Route path="d-chat-m" element={<Agents />}>
+            <Route path="insuranceM" element={<AgentsChatCommon />} />
+            <Route path="nursingM" element={<AgentsChatCommon />} />
+            <Route path="treatmentM" element={<AgentsChatCommon />} />
           </Route>
           <Route path="d-note">
             <Route path="dashboard" element={<AgentsChatCommon />} />

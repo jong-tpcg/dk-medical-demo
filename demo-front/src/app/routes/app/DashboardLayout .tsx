@@ -9,7 +9,6 @@ import { AiOutlineComment, AiOutlineDashboard } from "react-icons/ai";
 import { MdOutlineMedicalServices } from "react-icons/md";
 import { TbBook2, TbNurse } from "react-icons/tb";
 import { FaInfo, FaRegCircleQuestion } from "react-icons/fa6";
-
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
@@ -40,6 +39,12 @@ const items = [
   {
     key: "d-chat",
     label: "D-Chat",
+    icon: <AiOutlineComment size={20} />,
+    status: "active",
+  },
+  {
+    key: "d-chat-m",
+    label: "D-Chat(M)",
     icon: <AiOutlineComment size={20} />,
     status: "active",
   },

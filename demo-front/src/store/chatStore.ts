@@ -64,6 +64,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   qnaList: defaultQnaList,
   relatedQuestionsList: [],
   setSelectedAgent: (selectedAgent) => {
+    console.log("selectedAgent", selectedAgent);
     set({ selectedAgent });
   },
   setRelatedQuestionsList: (relatedQuestionsList) => {

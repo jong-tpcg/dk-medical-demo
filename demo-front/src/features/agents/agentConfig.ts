@@ -15,6 +15,12 @@ export const agentConfig: AgentConfigType = {
       "안녕하세요. 일반 분야  질문에 대한 상담을 도와드리겠습니다.",
     type: "default",
   },
+  insuranceM: {
+    route: "insuranceM",
+    initialMessage:
+      "안녕하세요. 일반 분야  질문에 대한 상담을 도와드리겠습니다.",
+    type: "default",
+  },
   insurance: {
     route: "insurance",
     initialMessage:

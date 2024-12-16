@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Card, Button, message, Select } from "antd";
 import {
   LeftOutlined,
@@ -39,7 +39,9 @@ const agents = [
 ];
 export const Agents = () => {
   const navigate = useNavigate();
+
   const { Option } = Select;
+  const location = useLocation();
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const rowRef = useRef<HTMLDivElement | null>(null);
@@ -55,16 +57,29 @@ export const Agents = () => {
 
   const handleCardClick = (route: string) => {
     //agents에서 선택한 agent의 route에 해당하는 객체의 status확인
+    const currentPath = location.pathname;
     const selectedAgent = agents.find((agent) => agent.route === route);
     if (selectedAgent?.status === "inactive") {
       messageApi.warning("준비중인 기능입니다.");
     } else {
+      if (currentPath.includes("d-chat-m")) {
+        const temp = `${route}M`;
+        console.log("currentPath", temp);
+        setSelectedAgent(temp);
+        navigate(`/d-chat-m/${temp}`);
+        return;
+      }
       navigate(`/d-chat/${route}`);
       setSelectedAgent(route);
     }
   };
   useEffect(() => {
     const currentPath = location.pathname;
+    if (currentPath.includes("d-chat-m/")) {
+      const agent = currentPath.split("/").pop();
+      if (agent) setSelectedAgent(`${agent}`);
+      return;
+    }
     if (currentPath.includes("d-chat/")) {
       const agent = currentPath.split("/").pop();
       if (agent) setSelectedAgent(agent);
@@ -104,22 +119,27 @@ export const Agents = () => {
   };
   const addQnaToChat = (qna: QnaStore) => {
     if (!selectedAgent) return;
-    const userMessage: DefaultChatMessageType = {
-      message: qna.question,
-      tools: null,
-      time: new Date().toLocaleTimeString(),
-      sender: "user",
-      model: "default",
-    };
-    const newAnswerMessage: DefaultChatMessageType = {
-      message: qna.answer,
-      tools: null,
-      time: new Date().toLocaleTimeString(),
-      sender: "ai",
-      model: "default",
-    };
-    addChatMessage(selectedAgent, userMessage);
-    addChatMessage(selectedAgent, newAnswerMessage);
+
+    setTimeout(() => {
+      const userMessage: DefaultChatMessageType = {
+        message: qna.question,
+        tools: null,
+        time: new Date().toLocaleTimeString(),
+        sender: "user",
+        model: "default",
+      };
+
+      const newAnswerMessage: DefaultChatMessageType = {
+        message: qna.answer,
+        tools: null,
+        time: new Date().toLocaleTimeString(),
+        sender: "ai",
+        model: "default",
+      };
+
+      addChatMessage(selectedAgent, userMessage);
+      addChatMessage(selectedAgent, newAnswerMessage);
+    }, 500); // 0.5초 지연
   };
   useEffect(() => {
     const row = rowRef.current;
