@@ -126,6 +126,7 @@ class DiscoveryEngineClient:
         Returns:
         - dict: The JSON response from the API.
         """
+        self.access_token = self.refresh_access_token()
         # Prepare the authorization header
         headers = {
             'Authorization': f'Bearer {self.access_token}',

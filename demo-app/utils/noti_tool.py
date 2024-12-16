@@ -112,7 +112,7 @@ def call_vertex_ai_gemini_model(prompt_text):
         "tool_called": tool_called,
         "results": tool_result if tool_result else []
     }
-    return json.dumps(result, ensure_ascii=False, indent=4)
+    return result
 
 # 테스트
 # rslt = call_vertex_ai_gemini_model("이번달 고시된 내용을 알려주세요")

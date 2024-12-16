@@ -138,13 +138,13 @@ def routing_parser(datastore_id, response):
 
 def fact_parser(response):
     parsed_facts = []
-    for record in response.get("records", []):
+    for record in response:
         parsed_facts.append({
             "factText": record.get("content", "No Content"),
             "attributes": {
                 "id": str(record.get("id", "No ID")),
                 "title": str(record.get("title", "No Title")),
-                "score": str(record.get("score", "No Score"))
+                "score": str(record.get("score", "No Score")),
             }
         })
     return parsed_facts
