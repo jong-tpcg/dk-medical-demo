@@ -78,7 +78,7 @@ export const DashboardLayout = () => {
       );
       if (e.key === "dashboard") {
         return window.open(
-          "https://hallym-poc-demo-556320446019.us-central1.run.app/",
+          "https://medical-record-summary-556320446019.us-central1.run.app/",
           "_blank"
         );
       }

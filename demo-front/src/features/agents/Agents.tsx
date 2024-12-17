@@ -124,6 +124,7 @@ export const Agents = () => {
       const userMessage: DefaultChatMessageType = {
         message: qna.question,
         tools: null,
+        urls: null,
         time: new Date().toLocaleTimeString(),
         sender: "user",
         model: "default",
@@ -132,6 +133,7 @@ export const Agents = () => {
       const newAnswerMessage: DefaultChatMessageType = {
         message: qna.answer,
         tools: null,
+        urls: null,
         time: new Date().toLocaleTimeString(),
         sender: "ai",
         model: "default",

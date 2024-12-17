@@ -3,6 +3,7 @@ import rehypeRaw from "rehype-raw";
 import rehypePrism from "rehype-prism-plus";
 import remarkGfm from "remark-gfm";
 import { useEffect, useState } from "react";
+import { HoverLink } from "./hover-link";
 
 interface ArkMessageBoxType {
   children?: React.ReactNode;
@@ -12,6 +13,8 @@ interface ArkMessageBoxType {
   type?: string;
   htmlLink?: string;
   auto?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  urls: any[] | null;
 }
 
 export const ArkMessageBox = ({
@@ -22,6 +25,7 @@ export const ArkMessageBox = ({
   markdownMessage,
   htmlLink,
   auto = false,
+  urls,
 }: ArkMessageBoxType) => {
   const [combinedMessage, setCombinedMessage] = useState<string | null>(null);
 
@@ -64,28 +68,11 @@ export const ArkMessageBox = ({
               remarkPlugins={[remarkGfm]}
               components={{
                 a: ({ href, children }) => (
-                  <a
+                  <HoverLink
                     href={href}
-                    target="_blank"
-                    style={{
-                      display: "inline-block",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "auto",
-                      padding: "0.25rem 0.5rem",
-                      marginLeft: "0.25rem",
-                      borderRadius: "10px",
-                      backgroundColor: "#E3F2FD ",
-                      fontSize: "0.8rem",
-                      color: " #1565C0 ",
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      border: "1px solid white",
-                      textDecoration: "none",
-                    }}
-                  >
-                    {children}
-                  </a>
+                    children={children}
+                    urls={urls && urls}
+                  />
                 ),
               }}
             >

@@ -3,6 +3,8 @@ export { UserMessage } from "./user-message";
 export interface DefaultChatMessageType {
   message: string | null;
   tools: RefereceType[] | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  urls: any[] | null;
   time?: string;
   userName?: string;
   avatarUrl?: string;

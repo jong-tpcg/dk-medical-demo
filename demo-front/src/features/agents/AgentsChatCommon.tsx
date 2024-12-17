@@ -39,6 +39,7 @@ export const AgentsChatCommon = () => {
       const userMessage: DefaultChatMessageType = {
         message: inputValue,
         tools: null,
+        urls: null,
         time: new Date().toLocaleTimeString(),
         sender: "user",
         model: "default",
@@ -46,6 +47,7 @@ export const AgentsChatCommon = () => {
       const newAnswerMessage: DefaultChatMessageType = {
         message: null,
         tools: null,
+        urls: null,
         time: new Date().toLocaleTimeString(),
         sender: "ai",
         type: "loading",
@@ -65,12 +67,18 @@ export const AgentsChatCommon = () => {
   };
 
   const sendMessage = (query: string) => {
-    console.log("sendMessage", query);
+    //현재 라우터
+    let model = "gemini";
+    const currentPath = location.pathname;
+    if (currentPath.includes("d-chat-m")) {
+      model = "medlm";
+    }
     // https://demo-app-test-556320446019.us-central1.run.app
     // http://127.0.0.1:8000
     axios
       .post("https://demo-app-test-556320446019.us-central1.run.app", {
         query: query,
+        model: model,
       })
       .then((res) => {
         if (res.status == 200) {
@@ -78,7 +86,15 @@ export const AgentsChatCommon = () => {
           const data = res.data;
           updateLastAiMessage({
             message: data.filter_text ? data.filter_text : data.answer_text,
-            tools: data.tools_data > 0 ? data.references_data : null,
+            tools:
+              data.references_data && data.references_data.length > 0
+                ? data.references_data
+                : null,
+            urls:
+              data.filter_references_data &&
+              data.filter_references_data.length > 0
+                ? data.filter_references_data
+                : null,
             type: "success",
           });
 
@@ -132,7 +148,7 @@ export const AgentsChatCommon = () => {
       {contextHolder}
       <div className="chat-list-wrapper">
         <ArkDefault avatarUrl="ark_medical">
-          <ArkMessageBox message={initialMessage} auto={true} />
+          <ArkMessageBox message={initialMessage} auto={true} urls={null} />
         </ArkDefault>
         {chatMessages.map((chat, index) =>
           chat.sender === "user" ? (
@@ -150,7 +166,12 @@ export const AgentsChatCommon = () => {
               time={chat.time}
               status={chat.type}
             >
-              {chat.message && <ArkMessageBox markdownMessage={chat.message} />}
+              {chat.message && (
+                <ArkMessageBox
+                  markdownMessage={chat.message}
+                  urls={chat.urls}
+                />
+              )}
               {chat.tools && (
                 <>
                   <Button
