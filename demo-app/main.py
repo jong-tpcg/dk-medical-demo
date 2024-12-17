@@ -52,8 +52,7 @@ def get_qna(query):
                 qna_results.append(struct_data)
     return qna_results
 
-def get_filter_text(reference_data, response):
-    answer_text = response.text
+def get_filter_text(reference_data, answer_text):
     print("=================Fact Parsing===================")
     fact_parsing = fact_parser(reference_data)
     client = DiscoveryEngineClient(PROJECT_NUMBER, DATA_STORE_ID)
@@ -63,23 +62,26 @@ def get_filter_text(reference_data, response):
         facts=fact_parsing,
         citation_threshold=0.8,
         )
-    # with open ("result_parse.json", 'w', encoding='utf-8') as f:
-    #     json.dump(result_parse, f, indent=4, ensure_ascii=False)
-    
+    source_list = None
+    ## 참고 문서가 있을경우 답변에 문서 URL 삽입
     if "citedChunks" in result_parse:
+        # 참고 문서 URL 추가
         for chunk in result_parse["citedChunks"]:
             source_index = int(chunk['source'])
-            chunk["url_page"] = reference_data[source_index].get('url_page', '#')
-            chunk["title"] = f"{reference_data[source_index].get('title', 'Unknown')}_page_{reference_data[source_index].get('pageIdentifier', 'Unknown')}"
-        # 중복 url 제거
-        existing_urls = set()
+            chunk["reference_index"] = source_index
+            chunk["reference_url_page"] = reference_data[source_index].get('url_page', '#')
+            chunk["reference_title"] = f"{reference_data[source_index].get('title', 'Unknown')}_page_{reference_data[source_index].get('pageIdentifier', 'Unknown')}"
+            del chunk['source']
+        with open ("result_parse.json", 'w', encoding='utf-8') as f:
+            json.dump(result_parse, f, indent=4, ensure_ascii=False)
+            
+        source_list = result_parse["citedChunks"]
         for claim in result_parse["claims"]:
             if claim.get("citationIndices"):
-                print("================claim")
                 source_text = ""
                 for index in claim["citationIndices"]:
-                    source_url = result_parse["citedChunks"][int(index)].get('url_page', '#')
-                    source_title = result_parse["citedChunks"][int(index)].get("title", "Unknown")
+                    source_index = int(index) + 1
+                    source_url = source_list[int(index)]["reference_url_page"]
                     # URL 전체를 파싱
                     parsed_url = urllib.parse.urlparse(source_url)
 
@@ -96,14 +98,13 @@ def get_filter_text(reference_data, response):
                         parsed_url.query,     # 쿼리는 없으므로 그대로
                         fragment              # #page=3 그대로 유지
                     ))
-                    if encoded_url not in existing_urls:
-                        url = f"[{source_title}]({encoded_url})"
-                        source_text += url
-                        existing_urls.add(encoded_url)  # URL 추가 
+                    url = f"[{source_index}]({encoded_url})"
+                    source_text += url
 
-                claim_text = claim["claimText"]
-
+                    
+                print("==========claim", source_text)
                 # 텍스트 위치 찾기
+                claim_text = claim["claimText"]
                 start_pos = answer_text.find(claim_text)
                 if start_pos == -1:
                     print(f"Claim text not found in answer_text: {claim_text}")
@@ -111,7 +112,11 @@ def get_filter_text(reference_data, response):
                 end_pos = start_pos + len(claim_text)
 
                 answer_text = answer_text[:end_pos] + source_text + answer_text[end_pos:]
-    return answer_text
+    filter = {
+        "filter_text": answer_text,
+        "filter_references_data": source_list
+    }
+    return filter
 
 def generate_prompt(model, reference_data,tool_data, query):
         
@@ -166,6 +171,7 @@ def generate_prompt(model, reference_data,tool_data, query):
             - title :  content를 뽑아낸 문서의 제목
             - content: 질문과 관련된 문서의 세부 내용을 포함하며, 이미 질문과 관련된 텍스트만을 뽑아낸 상태입니다.
         - 각 객체의 content 필드의 모든 내용을 분석하여 질문의 주요 내용을 요약합니다.
+        - 기준에 대해 질문했을 경우는 요약해서 답변하지 않고 세부 기준에 대해서 리스트 형태로 자세히 설명합니다.
         - 모든 객체의 content를 요약하여 헤더와 함께 정리된 리스트 형태로 제공하며, 하위 목록은 1., 2., 3. 형식으로 나열합니다.  
         - 표는 생성하지 않습니다.
         - 주요 변경 항목과 같이 리스트 형식은 1. 2. 3.과 같은 순서로 나열합니다.
@@ -252,10 +258,11 @@ def generate_prompt(model, reference_data,tool_data, query):
     }
     
     if(len(reference_data) != 0 and "|-" not in response.text and "|" not in response.text ):
-        filter_text  = get_filter_text(reference_data, response)
+        filter_text  = get_filter_text(reference_data, response.text)
         print(filter_text)
         if filter_text != "":
-            final["filter_text"] = filter_text
+            final["filter_text"] = filter_text["filter_text"]
+            final["filter_references_data"] = filter_text["filter_references_data"]
     return final
 
 def get_references(query):
