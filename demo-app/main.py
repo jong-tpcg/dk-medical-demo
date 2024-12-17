@@ -4,9 +4,9 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import google.auth
 import uvicorn
+import re
 from pydantic import BaseModel
 import requests
-import urllib.parse
 import json
 import vertexai
 from vertexai.generative_models import (GenerativeModel, ToolConfig)
@@ -14,12 +14,12 @@ from utils.agent_builder_query_nfilter import DiscoveryEngineClient
 from utils.rerank import rank_query, fact_parser
 from utils.noti_tool import call_vertex_ai_gemini_model
 import logging
-import os
 from utils.token import get_access_token
 from google.auth.transport.requests import Request
 import google.auth
 from typing import Optional
 from pydantic import BaseModel, Field
+from utils.insert_claim_sources import insert_sources
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -63,6 +63,7 @@ def get_filter_text(reference_data, answer_text):
         citation_threshold=0.8,
         )
     source_list = None
+    insert_text = ""
     ## 참고 문서가 있을경우 답변에 문서 URL 삽입
     if "citedChunks" in result_parse:
         # 참고 문서 URL 추가
@@ -72,48 +73,16 @@ def get_filter_text(reference_data, answer_text):
             chunk["reference_url_page"] = reference_data[source_index].get('url_page', '#')
             chunk["reference_title"] = f"{reference_data[source_index].get('title', 'Unknown')}_page_{reference_data[source_index].get('pageIdentifier', 'Unknown')}"
             del chunk['source']
+        
+        # JSON 결과 저장
         with open ("result_parse.json", 'w', encoding='utf-8') as f:
             json.dump(result_parse, f, indent=4, ensure_ascii=False)
-            
+        
         source_list = result_parse["citedChunks"]
-        for claim in result_parse["claims"]:
-            if claim.get("citationIndices"):
-                source_text = ""
-                for index in claim["citationIndices"]:
-                    source_index = int(index) + 1
-                    source_url = source_list[int(index)]["reference_url_page"]
-                    # URL 전체를 파싱
-                    parsed_url = urllib.parse.urlparse(source_url)
+        insert_text = insert_sources(answer_text, result_parse)
 
-                    # path와 query만 인코딩
-                    encoded_path = urllib.parse.quote(parsed_url.path)  # 경로 인코딩
-                    fragment = parsed_url.fragment
-
-                    # 인코딩된 URL 재구성
-                    encoded_url = urllib.parse.urlunparse((
-                        parsed_url.scheme,    # http or https
-                        parsed_url.netloc,    # example.com
-                        encoded_path,         # /path/to/resource
-                        parsed_url.params,    # URL params (if any)
-                        parsed_url.query,     # 쿼리는 없으므로 그대로
-                        fragment              # #page=3 그대로 유지
-                    ))
-                    url = f"[{source_index}]({encoded_url})"
-                    source_text += url
-
-                    
-                print("==========claim", source_text)
-                # 텍스트 위치 찾기
-                claim_text = claim["claimText"]
-                start_pos = answer_text.find(claim_text)
-                if start_pos == -1:
-                    print(f"Claim text not found in answer_text: {claim_text}")
-                    continue
-                end_pos = start_pos + len(claim_text)
-
-                answer_text = answer_text[:end_pos] + source_text + answer_text[end_pos:]
     filter = {
-        "filter_text": answer_text,
+        "filter_text": insert_text,
         "filter_references_data": source_list
     }
     return filter
@@ -130,10 +99,11 @@ def generate_prompt(model, reference_data,tool_data, query):
     ## model prompt
     vertexai.init(project="dk-medical-solutions", location="us-central1")
     if model == "medlm":
+        print("모델: medlm")
         model = GenerativeModel("medlm-large-1.5@001")
     else:
+        print("모델: gemini")
         model = GenerativeModel("gemini-1.5-flash-002")
-    
     prompt = f"""
     <role>
     당신은 D-Chat이라는 도메인 특화 대화형 어시스턴트입니다. 당신의 역할은 의료보험 심사 규정에 기반하여 정확하고 구조화된 응답을 제공하는 것입니다. 사용자가 질문하는 내용에 따라 명확하고 최신 정보를 제공하세요.
@@ -144,8 +114,8 @@ def generate_prompt(model, reference_data,tool_data, query):
     1. 사용자가 입력한 질문 {query}의 내용을 분석하여 질문의 의도를 명확히 파악합니다. 이후, 질문에 유형에 따라 정보를 선택하여 정보내에서 답변합니다.
     2.  답변은 질문의 유형에 따라 달라지며, 아래와 같이 제공됩니다:
     [공통]: 답변은 요약된 형태로 제공되어야 하며, 주요 내용은 명확하게 설명되어야 합니다.  답변을 생성할때는 질문의 유형에 따라 {tool_data} 또는 {reference_data} 중 하나의 정보만을 참고하여 답변을 생성합니다.
-    - 사용자의 질문이 고시된 내용에 대해 알고 싶어하는 질문이면서 특정고시에 대해 물어보는게 아닌 기간을 포함해 여러개의 고시에 대해 알고 싶은 질문일 경우 {tool_data}를 사용해서 답변합니다. 검색 결과를 확인하여 다음 두 가지 경우에 따라 처리합니다:
-        - {tool_data}이  빈배열이 아닐경우:
+    - 사용자의 질문이 고시된 내용에 대해 알고 싶어하는 질문이면서 특정고시에 대해 물어보는게 아닌 기간을 포함해 여러개의 고시에 대해 알고 싶은 질문일 경우 {tool_data}를 사용해서 답변합니다.
+        - {tool_data}는 사용자의 질문에 명시된 기간에 해당하는 고시 정보를 검색한 결과입니다.
             {tool_data}에 results 리스트 안에  모든 객체 정보를 표로 출력합니다. 각 객체는 다음과 같은 속성을 가집니다:
             revision_date: 고시일 or ""
             notification_number: 고시번호
@@ -161,9 +131,8 @@ def generate_prompt(model, reference_data,tool_data, query):
                 |---------------|---------------|---------------|-------------------------|
                 | 2024-11-01    | 2024-101      | 2024-11-10    | 요양급여 기준 변경     |
             -  markdown형태로 만들어진 표와 함께 어떤 데이터를 제공해주는지에 대한 소개 텍스트와 함께(ex. 요청하신 9월 고시목록입니다. / 가장 최근 고시목록 3개입니다.) 모두 텍스트로 반환됩니다.
-        -  {tool_data}가 빈배열일경우:
-            다른 텍스트 없이 "기간내에 고시된 데이터가 없습니다."라는 메시지만 반환합니다.
-    -**특정 내용에 대한 질문 (예: 기간없이 특정 고시 내용질문, 기준, 응급실 재방문시 수가 산정기준 등) 유형일 경우:  
+        -  {tool_data}가 빈배열일경우 해당하는 기간내에 고시 정보가 없으므로 기간내에 고시된 데이터가 없습니다. 라는 메시지만 반환합니다.
+    -**특정 내용에 대한 질문 (예:  구체적인 하나의 고시 내용질문, 기준, 응급실 재방문시 수가 산정기준 등) 유형일 경우:  
         질문에 관련된 정보를 {reference_data}에서 검색하여 응답합니다.  
         어떤 자료를 어떻게 참고해서 답변했는지에 대한 정보를 제공해야 합니다.
         - {reference_data}은 정보 객체의 리스트로 구성되며, 각 객체는 다음과 같은 속성을 포함합니다:
@@ -178,6 +147,7 @@ def generate_prompt(model, reference_data,tool_data, query):
         - 리스트의 헤더는 항상 굵은 글씨로 표시합니다. 
         - 요약 내용은 간결하고 명확하게 작성하며, 불필요한 반복이나 문구는 생략합니다.
         - title은 답변에는 사용하지 않습니다. 어떤 문서를 참고했는지는 제공하지 않습니다.
+        - 중복된 내용이 여러번 들어가지 않게 합니다.
         - {reference_data}이 비어 있는 경우:
             - "검색어에 대한 정보가 존재하지 않습니다."라는 메시지를 반환합니다.
     4. 각 문단이 끝난 후 한 개의 개행(빈 줄)을 추가하여 새로운 문단을 시작합니다. 
